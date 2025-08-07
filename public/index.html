@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UniSphere</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            poppins: ["Poppins", "sans-serif"],
+          },
+          colors: {
+            darkgreenbg: '#1F2A25',
+          },
+        },
+      },
+    };
+  </script>
+<!-- Include in <head> -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+
+  <!-- In CSS -->  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="font-poppins text-white relative overflow-x-hidden bg-[#0F1514]/30 ">
+<!-- Header -->
+<header class="p-4 flex justify-between items-center bg-white shadow-lg text-white relative z-50">
+  <!-- App Name -->
+  <h1 class="text-xl font-bold font-['Press_Start_2P'] tracking-wider text-black">
+    UniSphere
+  </h1>
+  <!-- Hamburger -->
+  <div class="menu" onclick="toggleMenu()">
+    <div class="bar1"></div>
+    <div class="bar2"></div>
+    <div class="bar3"></div>
+  </div>
+  <!-- Slide-out Menu and Overlay -->
+  <div id="overlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden" onclick="toggleMenu()"></div>
+
+  <div id="mobile-menu" class="fixed top-0 right-0 h-full w-1/2 bg-white text-white shadow-lg z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
+    <ul class="p-6 space-y-4 mt-8">
+      <li>
+        <button id="openAbout" class="text-lg font-bold text-black font-[Inter]">
+          About
+        </button>
+      </li>
+      <li>
+        <a href="upload.html" 
+           class="block text-lg font-semibold text-black font-[Inter]" 
+           target="_blank" 
+           rel="noopener noreferrer">
+          Admin login
+        </a>
+      </li>
+    </ul>
+  </div>
+  
+</header>
+
+<!-- About Section -->
+
+
+<div id="aboutSection" class="fixed inset-0 bg-white/50 backdrop-blur-md border border-white/20 rounded-xl flex flex-col items-center justify-center p-6 hidden z-50">
+  
+  <!-- Heading with shadow -->
+  <h1 class="text-2xl font-bold mb-4 text-black drop-shadow-lg">About UniSphere 🚀</h1>
+
+  <!-- Description with text shadow -->
+  <p class="text-center text-base max-w-md leading-relaxed px-4 text-black drop-shadow-md">
+    <strong>Speak Your Mind, Anonymously.</strong><br><br>
+    At UniSphere, we believe that every student deserves a space to be heard—without fear, judgment, or labels. Our anonymous posting feature empowers you to share your honest thoughts, personal stories, confessions, or even campus rants, all without revealing your identity.<br><br>
+
+    Whether you're celebrating a win, venting about a rough day, opening up about something deeply personal, or simply expressing an idea you’re unsure how others might receive—UniSphere gives you a safe, supportive environment to be real.<br><br>
+
+    No usernames. No pressure. Just your voice, unfiltered.<br><br>
+
+    Because sometimes, the most powerful conversations begin when nobody knows your name.
+  </p>
+
+  <!-- Developer Info -->
+  <p class="text-black text-sm mt-6 drop-shadow-sm">
+    Developer:
+  </p>
+
+  <!-- Social Icons -->
+  <div class="flex items-center space-x-6 mt-2">
+    <a href="https://www.instagram.com/skanda.umesh/profilecard/?igsh=MmxqanQyaHRrN2I1"
+       target="_blank"
+       class="text-pink-600 text-2xl hover:text-pink-400 transition drop-shadow">
+      <i class="fab fa-instagram"></i>
+    </a>
+    <a href="https://www.linkedin.com/in/skanda-umesh-88b16432b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+       target="_blank"
+       class="text-blue-500 text-2xl hover:text-blue-400 transition drop-shadow">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </div>
+
+  <!-- Close Button -->
+  <button id="closeAbout" class="mt-4 bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition drop-shadow-md">
+    Close
+  </button>
+</div>
+
+
+<!-- Add Post Section -->
+<section id="add" class="tab-section hidden">
+  <div class="fixed inset-0 bg-white z-[1000] hidden" id="createPost">
+    <div class="flex items-center justify-between p-4 border-b border-gray-300">
+      <i class="fas fa-arrow-left text-2xl cursor-pointer" id="createPostBackButton"></i>
+      <h1 class="text-xl font-Quicksand">Create</h1>
+      <button class="border border-black px-4 py-2 rounded-lg" id="submitPostButton">Post</button>
+    </div>
+    <div class="p-4">
+      <textarea id="postContent" class="w-full h-32 p-2 border border-gray-300 rounded-lg mb-2" placeholder="Share your thoughts..."></textarea>
+      <input type="file" id="imageInput" accept="image/*" class="hidden" />
+      <button id="imageUploadButton" class="text-gray-600 p-2 rounded-lg border border-gray-300">
+        <i class="fas fa-image mr-2"></i>Add Image
+      </button>
+      <div id="imagePreview" class="mt-4"></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Create Post Floating Button -->
+<button onclick="showTab('add')" class="fixed bottom-[25px] right-[25px]
+  bg-black text-white w-14 h-14 rounded-full
+  shadow-lg z-10
+  flex items-center justify-center
+  ring-4 ring-black border-4 border-[#1A1A1D]
+  hover:scale-110 transition-all duration-200"
+  id="createPostButton" title="Create Post" aria-label="Create Post">
+  <i class="fa-solid fa-plus text-2xl"></i>
+</button>
+
+
+
+<!-- Main Content -->
+<main class="p-4 pb-24">
+  <!-- Banner -->
+  <div class="mb-10 rounded-xl overflow-hidden shadow-lg">
+    <img id="bannerImage" src="" alt="Banner" class="w-full h-48 md:h-60 object-cover rounded-xl hidden" />
+    <div id="bannerPlaceholder" class="w-full h-48 md:h-60 flex items-center justify-center bg-gray-700 rounded-xl text-gray-300">
+      No banner image found
+    </div>
+  </div>
+  <div id="postsContainer" class="w-full max-w-4xl mx-auto"></div>
+</main>
+
+
+<script src="script.js"></script>
+<script>
+  function toggleMenu() {
+    const menu = document.getElementById("mobile-menu");
+    const menuIcon = document.querySelector(".menu");
+
+    // Toggle the 'show' class for smooth animations
+    menu.classList.toggle("show");
+    menuIcon.classList.toggle("active");
+
+    // Ensuring smooth transition
+    if (menu.classList.contains("show")) {
+        menu.style.transform = "translateX(0%)";
+    } else {
+        menu.style.transform = "translateX(100%)";
+    }
+}
+
+  document.getElementById("openAbout")?.addEventListener("click", () => {
+    document.getElementById("aboutSection")?.classList.remove("hidden");
+  });
+  document.getElementById("closeAbout")?.addEventListener("click", () => {
+    document.getElementById("aboutSection")?.classList.add("hidden");
+  });
+  document.getElementById("createPostBackButton")?.addEventListener("click", () => {
+    document.getElementById("createPost")?.classList.add("hidden");
+    document.getElementById("home")?.classList.remove("hidden");
+    document.getElementById("add")?.classList.add("hidden");
+  });
+
+  function showTab(tabId) {
+    document.querySelectorAll(".tab-section").forEach(section => {
+      section.classList.add("hidden");
+    });
+    document.getElementById(tabId)?.classList.remove("hidden");
+  }
+
+  // Banner loading only; no background
+  async function loadBanner() {
+    try {
+      const bannerRes = await fetch('/api/banner');
+      if (bannerRes.ok) {
+        const { imageUrl } = await bannerRes.json();
+        const bannerImage = document.getElementById('bannerImage');
+        const bannerPlaceholder = document.getElementById('bannerPlaceholder');
+        if(imageUrl) {
+          bannerImage.src = imageUrl;
+          bannerImage.classList.remove('hidden');
+          bannerPlaceholder.style.display = 'none';
+        } else {
+          bannerImage.classList.add('hidden');
+          bannerPlaceholder.style.display = 'flex';
+        }
+      }
+    } catch(e) {
+      console.error('Error loading banner:', e);
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', loadBanner);
+  async function loadBackground() {
+    try {
+      const bgRes = await fetch('/api/background');
+      if (bgRes.ok) {
+        const { imageUrl } = await bgRes.json();
+        if (imageUrl) {
+          // Cache-bust in case the old image was cached
+          document.body.style.backgroundImage = `url(${imageUrl}?ts=${Date.now()})`;
+          document.body.style.backgroundRepeat = 'no-repeat';
+          document.body.style.backgroundPosition = 'center center';
+          document.body.style.backgroundSize = 'contain';
+        } else {
+          document.body.style.backgroundImage = '';
+        }
+      }
+    } catch (e) {
+      console.error('Error loading background:', e);
+    }
+  }
+  window.addEventListener('DOMContentLoaded', loadBackground);
+  
+</script>
+</body>
+</html>
