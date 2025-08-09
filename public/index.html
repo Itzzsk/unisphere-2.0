@@ -36,84 +36,85 @@
 
 <body class="font-poppins text-white relative overflow-x-hidden bg-[#0F1514]/30 ">
 <!-- Header -->
-<header class="p-4 flex justify-between items-center bg-white shadow-lg text-white relative z-50">
+<header class="fixed top-0 left-0 w-full p-4 flex justify-between items-center bg-white shadow-lg text-white z-50">
   <!-- App Name -->
-  <h1 class="text-xl font-bold font-['Press_Start_2P'] tracking-wider text-black">
-    UniSphere
+  <h1 class="flex items-center space-x-2 font-bold font-['Press_Start_2P'] tracking-wider text-black">
+    <i class="fa-solid fa-user-astronaut text-xl"></i>
+    <span>UniSphere</span>
   </h1>
+  
   <!-- Hamburger -->
-  <div class="menu" onclick="toggleMenu()">
+  <div class="menu cursor-pointer" onclick="toggleMenu()">
     <div class="bar1"></div>
     <div class="bar2"></div>
     <div class="bar3"></div>
   </div>
+
   <!-- Slide-out Menu and Overlay -->
   <div id="overlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden" onclick="toggleMenu()"></div>
 
-  <div id="mobile-menu" class="fixed top-0 right-0 h-full w-1/2 bg-white text-white shadow-lg z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
+  <div id="mobile-menu" class="fixed top-0 right-0 h-full w-1/2 bg-white shadow-lg z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
     <ul class="p-6 space-y-4 mt-8">
       <li>
-        <button id="openAbout" class="text-lg font-bold text-black font-[Inter]">
-          About
+        <button id="openAbout" class="flex items-center space-x-2 text-lg font-bold text-black font-[Inter]">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>About</span>
         </button>
       </li>
+      
       <li>
         <a href="upload.html" 
-           class="block text-lg font-semibold text-black font-[Inter]" 
+           class="flex items-center space-x-2 text-lg font-semibold text-black font-[Inter]" 
            target="_blank" 
            rel="noopener noreferrer">
-          Admin login
+          <i class="fa-solid fa-user-shield"></i>
+          <span>Admin login</span>
         </a>
       </li>
     </ul>
   </div>
-  
 </header>
 
 <!-- About Section -->
 
 
-<div id="aboutSection" class="fixed inset-0 bg-white/50 backdrop-blur-md border border-white/20 rounded-xl flex flex-col items-center justify-center p-6 hidden z-50">
+<div id="aboutSection" class="fixed inset-0 bg-white/50 backdrop-blur-md border border-white/20 rounded-xl flex flex-col items-center p-6 overflow-y-auto hidden z-50">
   
-  <!-- Heading with shadow -->
-  <h1 class="text-2xl font-bold mb-4 text-black drop-shadow-lg">About UniSphere 🚀</h1>
+  <!-- Heading -->
+  <div class="flex items-center space-x-2 mb-4 mt-6">
+    <i class="fa-solid fa-user-astronaut text-black text-2xl drop-shadow-lg"></i>
+    <h1 class="text-2xl font-bold text-black drop-shadow-lg">About UniSphere</h1>
+  </div>
 
-  <!-- Description with text shadow -->
-  <p class="text-center text-base max-w-md leading-relaxed px-4 text-black drop-shadow-md">
+  <!-- Balanced-Length Description -->
+  <p class="text-center text-base max-w-2xl leading-relaxed px-4 text-black drop-shadow-md">
     <strong>Speak Your Mind, Anonymously.</strong><br><br>
-    At UniSphere, we believe that every student deserves a space to be heard—without fear, judgment, or labels. Our anonymous posting feature empowers you to share your honest thoughts, personal stories, confessions, or even campus rants, all without revealing your identity.<br><br>
-
-    Whether you're celebrating a win, venting about a rough day, opening up about something deeply personal, or simply expressing an idea you’re unsure how others might receive—UniSphere gives you a safe, supportive environment to be real.<br><br>
-
-    No usernames. No pressure. Just your voice, unfiltered.<br><br>
-
-    Because sometimes, the most powerful conversations begin when nobody knows your name.
+    UniSphere is a safe and open platform for students to share thoughts, confessions, and experiences without revealing their identity. 
+    Whether it's celebrating a win, venting frustrations, or starting an important conversation, you can express yourself freely here.<br><br>
+    No usernames. No pressure. Just honest voices in a supportive space.
   </p>
 
   <!-- Developer Info -->
-  <p class="text-black text-sm mt-6 drop-shadow-sm">
-    Developer:
-  </p>
+  <p class="text-black text-sm mt-6 drop-shadow-sm">Developer:</p>
 
   <!-- Social Icons -->
   <div class="flex items-center space-x-6 mt-2">
-    <a href="https://www.instagram.com/skanda.umesh/profilecard/?igsh=MmxqanQyaHRrN2I1"
-       target="_blank"
+    <a href="https://www.instagram.com/skanda.umesh/profilecard/?igsh=MmxqanQyaHRrN2I1" target="_blank"
        class="text-pink-600 text-2xl hover:text-pink-400 transition drop-shadow">
       <i class="fab fa-instagram"></i>
     </a>
-    <a href="https://www.linkedin.com/in/skanda-umesh-88b16432b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
-       target="_blank"
+    <a href="https://www.linkedin.com/in/skanda-umesh-88b16432b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank"
        class="text-blue-500 text-2xl hover:text-blue-400 transition drop-shadow">
       <i class="fab fa-linkedin"></i>
     </a>
   </div>
 
   <!-- Close Button -->
-  <button id="closeAbout" class="mt-4 bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition drop-shadow-md">
+  <button id="closeAbout" class="mt-6 mb-6 bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition drop-shadow-md">
     Close
   </button>
 </div>
+
 
 
 <!-- Add Post Section -->
@@ -150,7 +151,7 @@
 
 
 <!-- Main Content -->
-<main class="p-4 pb-24">
+<main class="p-4 pb-24 mb-8 mt-16">
   <!-- Banner -->
   <div class="mb-10 rounded-xl overflow-hidden shadow-lg">
     <img id="bannerImage" src="" alt="Banner" class="w-full h-48 md:h-60 object-cover rounded-xl hidden" />
@@ -158,8 +159,11 @@
       No banner image found
     </div>
   </div>
+
+  <!-- Posts -->
   <div id="postsContainer" class="w-full max-w-4xl mx-auto"></div>
 </main>
+>
 
 
 <script src="script.js"></script>
