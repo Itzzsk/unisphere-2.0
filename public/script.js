@@ -140,7 +140,7 @@ async function fetchPosts() {
             <div class="rounded-2xl shadow-lg mb-4 bg-[#121B1A] p-4">
             <div class="flex items-center mb-4 space-x-2">
             <i class="fa-solid fa-user-astronaut text-black text-lg"></i>
-                    <h1 class="font-poppins text-black">UniSphere</h1>
+                    <h1 class="font-poppins font-bold text-black">UniSphere</h1>
                 </div>
                 ${post.content ? `<p class="text-black leading-relaxed mb-4">${post.content}</p>` : ''}
                 ${post.imageUrl ? `
