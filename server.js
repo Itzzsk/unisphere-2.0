@@ -5,14 +5,16 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
 const path = require('path');
-
+const { isToxic, isImageUnsafe } = require('./moderation');
+const BadWord = require('./models/moderation');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // CORS Configuration
 app.use(cors({
   origin: [
-    'http://localhost:5000', // Update with your frontend origin
+    'http://localhost:3000',
+    'http://localhost:5000',
     'https://res.cloudinary.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -50,27 +52,29 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 // Schemas
 const postSchema = new mongoose.Schema({
-  content: String,
-  imageUrl: String,
+  content: { type: String, trim: true },
+  imageUrl: { type: String, trim: true },
   createdAt: { type: Date, default: Date.now },
   comments: [{
-    content: { type: String, required: true },
+    content: { type: String, required: true, trim: true },
     createdAt: { type: Date, default: Date.now }
   }],
   likes: { type: Number, default: 0 }
 });
-const Post = mongoose.model('Post', postSchema);
 
 const bannerSchema = new mongoose.Schema({
   imageUrl: String,
   updatedAt: { type: Date, default: Date.now }
 });
-const Banner = mongoose.model('Banner', bannerSchema);
 
 const backgroundSchema = new mongoose.Schema({
   imageUrl: String,
   updatedAt: { type: Date, default: Date.now }
 });
+
+// Models
+const Post = mongoose.model('Post', postSchema);
+const Banner = mongoose.model('Banner', bannerSchema);
 const Background = mongoose.model('Background', backgroundSchema);
 
 // Routes
@@ -142,13 +146,28 @@ app.get('/api/background', async (req, res) => {
 // Upload post image
 app.post('/api/upload/post', upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
+  
   try {
+    // Check image for unsafe content BEFORE uploading to Cloudinary
+    const imageUnsafe = await isImageUnsafe(req.file.buffer, req.file.mimetype);
+    
+    if (imageUnsafe === true) {
+      return res.status(400).json({ message: 'Image contains inappropriate or unsafe content' });
+    }
+    
+    if (imageUnsafe === null) {
+      // Fail-safe: block if we can't verify safety
+      return res.status(400).json({ message: 'Unable to verify image safety - upload blocked' });
+    }
+
+    // Image is safe, proceed with Cloudinary upload
     const b64 = Buffer.from(req.file.buffer).toString("base64");
     const dataUri = `data:${req.file.mimetype};base64,${b64}`;
     const result = await cloudinary.uploader.upload(dataUri, {
       folder: 'posts',
       resource_type: 'image'
     });
+    
     res.json({ imageUrl: result.secure_url });
   } catch (error) {
     console.error("Post image upload error:", error);
@@ -156,25 +175,36 @@ app.post('/api/upload/post', upload.single('image'), async (req, res) => {
   }
 });
 
-// Create new post
+// Alternative approach - use isToxic directly
 app.post('/api/posts', async (req, res) => {
   try {
     const { content, imageUrl } = req.body;
-    if (!content && !imageUrl) return res.status(400).json({ message: 'Post requires text or image' });
+    
+    if (!content && !imageUrl) {
+      return res.status(400).json({ message: 'Post requires text or image' });
+    }
+
+    if (content) {
+      const toxicCheck = await isToxic(content);
+      if (toxicCheck[0] === true) {
+        return res.status(400).json({ message: 'Content flagged as inappropriate' });
+      }
+    }
+
     const newPost = new Post({ content, imageUrl });
     await newPost.save();
-    res.status(201).json({ message: 'Post created successfully' });
+    res.status(201).json({ message: 'Post created successfully', post: newPost });
   } catch (error) {
     console.error("Post creation error:", error);
     res.status(500).json({ message: 'Error creating post' });
   }
 });
 
+
 // Get all posts
 app.get('/api/posts', async (req, res) => {
   try {
     const posts = await Post.find().sort({ createdAt: -1 });
-    if (posts.length === 0) return res.status(404).json({ message: "No posts found" });
     res.json(posts);
   } catch (error) {
     console.error("Posts fetch error:", error);
@@ -183,13 +213,15 @@ app.get('/api/posts', async (req, res) => {
 });
 
 // Like a post
-app.post('/api/posts/:postId/like', express.json(), async (req, res) => {
+app.post('/api/posts/:postId/like', async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId);
     if (!post) return res.status(404).json({ message: 'Post not found' });
+    
     const liked = !!req.body.liked;
     post.likes += liked ? 1 : -1;
     if (post.likes < 0) post.likes = 0;
+    
     await post.save();
     res.json({ likes: post.likes });
   } catch (error) {
@@ -198,14 +230,27 @@ app.post('/api/posts/:postId/like', express.json(), async (req, res) => {
   }
 });
 
-// Add comment to post
-app.post('/api/posts/:postId/comments', express.json(), async (req, res) => {
+// Add comment to post (consistent with post moderation)
+app.post('/api/posts/:postId/comments', async (req, res) => {
   try {
     const { content } = req.body;
     if (!content) return res.status(400).json({ message: 'Comment cannot be empty' });
+
+    const moderationResult = await moderateText(content, ['en', 'es', 'fr', 'hi', 'kn']); // Added 'kn'
+    
+    if (moderationResult.isBlocked) {
+      return res.status(400).json({ 
+        message: 'Comment contains inappropriate content',
+        details: moderationResult.reasons.foundWords?.length > 0 
+          ? `Blocked words: ${moderationResult.reasons.foundWords.join(', ')}`
+          : 'Content flagged by AI moderation'
+      });
+    }
+
     const post = await Post.findById(req.params.postId);
     if (!post) return res.status(404).json({ message: 'Post not found' });
-    post.comments.push({ content, createdAt: new Date() });
+
+    post.comments.push({ content });
     await post.save();
     res.json({ message: 'Comment added successfully', comments: post.comments });
   } catch (error) {
@@ -226,18 +271,14 @@ app.get('/api/posts/:postId/comments', async (req, res) => {
   }
 });
 
-// Serve static frontend files (including index.html, upload.html, etc.)
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Explicitly serve upload.html route if needed (optional)
+// Fallback routes
 app.get('/upload.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'upload.html'));
 });
 
-// Fallback for SPA or index.html
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-// 404 handler for unknown routes
+// 404 handler
 app.use((req, res) => res.status(404).json({ message: "❌ Route Not Found" }));
 
 // Start the server
