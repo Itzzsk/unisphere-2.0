@@ -236,14 +236,24 @@ app.post('/api/posts/:postId/comments', async (req, res) => {
     const { content } = req.body;
     if (!content) return res.status(400).json({ message: 'Comment cannot be empty' });
 
-    const moderationResult = await moderateText(content, ['en', 'es', 'fr', 'hi', 'kn']); // Added 'kn'
+    // Import moderateText directly in the route
+    const { moderateText } = require('./moderation');
+    
+    const moderationResult = await moderateText(content, ['en', 'es', 'fr', 'hi', 'kn']);
     
     if (moderationResult.isBlocked) {
+      let blockReason = '';
+      
+      if (moderationResult.reasons.databaseMatch) {
+        blockReason = `Database flagged words: ${moderationResult.reasons.foundWords.join(', ')}`;
+      }
+      if (moderationResult.reasons.aiDetection) {
+        blockReason += (blockReason ? ' AND ' : '') + 'AI detected inappropriate content';
+      }
+      
       return res.status(400).json({ 
         message: 'Comment contains inappropriate content',
-        details: moderationResult.reasons.foundWords?.length > 0 
-          ? `Blocked words: ${moderationResult.reasons.foundWords.join(', ')}`
-          : 'Content flagged by AI moderation'
+        details: blockReason
       });
     }
 
@@ -253,11 +263,13 @@ app.post('/api/posts/:postId/comments', async (req, res) => {
     post.comments.push({ content });
     await post.save();
     res.json({ message: 'Comment added successfully', comments: post.comments });
+    
   } catch (error) {
     console.error('Add comment error:', error);
     res.status(500).json({ message: 'Failed to add comment' });
   }
 });
+
 
 // Get comments for a post
 app.get('/api/posts/:postId/comments', async (req, res) => {
