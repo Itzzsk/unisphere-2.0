@@ -777,40 +777,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   console.log('✅ All Tailwind features initialized successfully');
 });
-async function loadBanner() {
-  try {
-    const res = await fetch('/api/banner');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const { imageUrl, linkUrl } = await res.json();
-    const img  = document.getElementById('bannerImage');
-    const ph   = document.getElementById('bannerPlaceholder');
-    const link = document.getElementById('bannerLinkWrapper');
-
-    if (imageUrl) {
-      // Set image and link
-      img.src   = imageUrl;
-      link.href = linkUrl || '#';
-
-      // Show image when loaded, hide placeholder
-      img.onload = () => {
-        img.classList.remove('opacity-0');
-        ph.classList.add('hidden');
-      };
-    } else {
-      // No banner - show placeholder
-      link.href = '#';
-      img.classList.add('opacity-0');
-      ph.classList.remove('hidden');
-    }
-  } catch (err) {
-    console.error('Error loading banner:', err);
-    document.getElementById('bannerPlaceholder').classList.remove('hidden');
-  }
-}
-
-// Load banner when page loads
-document.addEventListener('DOMContentLoaded', loadBanner);
 
 
 </script>
