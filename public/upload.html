@@ -1,249 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Banner & Background Upload</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>UniSphere Admin Banner</title>
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-</head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-
-<!-- 🔒 Login Section -->
-<div id="loginSection" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm space-y-4">
-  <h2 class="text-xl font-bold text-center text-gray-800">Admin Login</h2>
-  <input id="email" type="email" placeholder="Email" class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-  <input id="password" type="password" placeholder="Password" class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-  <button onclick="login()" class="w-full bg-black text-white py-2 rounded hover:bg-gray-900 transition" id="loginBtn">
-    Login
-  </button>
-  <p id="loginError" class="text-red-600 text-sm text-center hidden"></p>
-</div>
-
-<!-- ✅ Upload Section -->
-<div id="uploadSection" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md space-y-8 hidden">
-  <div class="flex justify-between items-center">
-    <h2 class="text-xl font-bold text-gray-800">Admin Panel</h2>
-    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition text-sm">
-      Logout
-    </button>
-  </div>
-  
-  <!-- Background Upload -->
-  <div>
-    <h3 class="text-lg font-bold mb-4 text-center text-gray-800">Upload Background</h3>
-    <form id="uploadBackgroundForm">
-      <input type="file" id="backgroundImage" accept="image/*" class="mb-3 w-full border rounded p-2" required />
-      <button type="submit" class="w-full bg-black text-white py-2 rounded hover:bg-gray-900 transition">
-        Update Background
-      </button>
-    </form>
-    <div id="backgroundPreview" class="mt-2"></div>
-  </div>
-
-  <hr class="border-gray-300" />
-
-  <!-- Banner Upload -->
-  <div>
-    <h3 class="text-lg font-bold mb-4 text-center text-gray-800">Upload Banner</h3>
-    <form id="uploadBannerForm">
-      <input type="file" id="bannerImage" accept="image/*" class="mb-3 w-full border rounded p-2" required />
-      <button type="submit" class="w-full bg-[#B3FF59] text-black py-2 rounded hover:bg-lime-400 transition font-semibold">
-        Update Banner
-      </button>
-    </form>
-    <div id="bannerPreview" class="mt-2"></div>
-  </div>
-</div>
-
-<script>
-  // 🔥 Your Firebase Configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyAn172ndihcZRqCBAxKYATkc3Hf_uNi4hw",
-    authDomain: "unisphere-35100.firebaseapp.com",
-    projectId: "unisphere-35100",
-    storageBucket: "unisphere-35100.firebasestorage.app",
-    messagingSenderId: "331319571025",
-    appId: "1:331319571025:web:f21eaacd723daff8533e70"
-  };
-
-  // Initialize Firebase
-  try {
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    console.log('✅ Firebase initialized successfully');
-  } catch (error) {
-    console.error('❌ Firebase initialization error:', error);
-    alert('Firebase configuration error. Please check the config values.');
-  }
-
-  // Auth state observer
-  firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-      console.log('User is signed in:', user.email);
-      showUploadSection();
-    } else {
-      console.log('User is signed out');
-      showLoginSection();
-    }
-  });
-
-  function showLoginSection() {
-    document.getElementById("loginSection").classList.remove("hidden");
-    document.getElementById("uploadSection").classList.add("hidden");
-  }
-
-  function showUploadSection() {
-    document.getElementById("loginSection").classList.add("hidden");
-    document.getElementById("uploadSection").classList.remove("hidden");
-  }
-
-  async function login() {
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-    const errorEl = document.getElementById("loginError");
-    const loginBtn = document.getElementById("loginBtn");
-    
-    errorEl.classList.add("hidden");
-    
-    if (!email || !password) {
-      errorEl.textContent = "Please fill in all fields";
-      errorEl.classList.remove("hidden");
-      return;
-    }
-
-    loginBtn.disabled = true;
-    loginBtn.textContent = "Logging in...";
-
-    try {
-      await firebase.auth().signInWithEmailAndPassword(email, password);
-    } catch (error) {
-      console.error('Login error:', error);
-      errorEl.textContent = getFirebaseErrorMessage(error);
-      errorEl.classList.remove("hidden");
-    } finally {
-      loginBtn.disabled = false;
-      loginBtn.textContent = "Login";
-    }
-  }
-
-  function logout() {
-    firebase.auth().signOut().then(() => {
-      console.log('User signed out');
-    }).catch((error) => {
-      console.error('Logout error:', error);
-      alert('Error signing out');
-    });
-  }
-
-  function getFirebaseErrorMessage(error) {
-    switch (error.code) {
-      case 'auth/user-not-found':
-        return 'No user found with this email address';
-      case 'auth/wrong-password':
-        return 'Incorrect password';
-      case 'auth/invalid-email':
-        return 'Invalid email address';
-      case 'auth/user-disabled':
-        return 'This account has been disabled';
-      case 'auth/too-many-requests':
-        return 'Too many failed attempts. Please try again later';
-      default:
-        return error.message;
-    }
-  }
-
-  // Preview Image Utility
-  function previewImage(inputId, previewId) {
-    const input = document.getElementById(inputId);
-    const preview = document.getElementById(previewId);
-    if (input && preview) {
-      input.onchange = () => {
-        const file = input.files[0];
-        preview.innerHTML = '';
-        if (file) {
-          if (file.size > 5 * 1024 * 1024) {
-            alert('File size must be less than 5MB');
-            input.value = '';
-            return;
-          }
-          
-          const reader = new FileReader();
-          reader.onload = e => {
-            preview.innerHTML = `<img src="${e.target.result}" class="rounded w-full max-h-56 object-contain border mt-2" alt="Preview">`;
-          };
-          reader.readAsDataURL(file);
-        }
-      };
-    }
-  }
-
-  previewImage("backgroundImage", "backgroundPreview");
-  previewImage("bannerImage", "bannerPreview");
-
-  async function handleUpload(fieldName, inputId, endpoint) {
-    const fileInput = document.getElementById(inputId);
-    if (!fileInput || !fileInput.files.length) {
-      alert('Please select a file first');
-      return;
-    }
-
-    const user = firebase.auth().currentUser;
-    if (!user) {
-      alert('Please log in first');
-      showLoginSection();
-      return;
-    }
-
-    const submitBtn = fileInput.closest('form').querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    
-    try {
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Uploading...';
-      
-      const formData = new FormData();
-      formData.append(fieldName, fileInput.files[0]);
-      
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        body: formData,
-      });
-      
-      let resClone = res.clone();
-      try {
-        const result = await res.json();
-        alert(result.message || "Upload successful");
-        fileInput.value = '';
-        const previewId = fieldName + 'Preview';
-        document.getElementById(previewId).innerHTML = '';
-      } catch (jsonError) {
-        try {
-          const text = await resClone.text();
-          alert("Server response was not JSON:\n" + text);
-        } catch {
-          alert("Unknown server response");
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { press: ['"Press Start 2P"', 'cursive'] },
+          colors: { nightTop: '#0F172A', nightBottom: '#1E293B' },
+          boxShadow: { 'inner-glow':'inset 0 0 6px 0 rgba(0,0,0,.35)' }
         }
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert(error.message || "Network error");
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalText;
-    }
+    };
+  </script>
+
+  <!-- Firebase compat v9 -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <!-- Icons & font -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    html,body{height:100%}
+    body{background:linear-gradient(135deg,#e9f0ff 0%,#dbeafe 40%,#bfdbfe 100%);}
+    body.dark{background:linear-gradient(135deg,var(--tw-color-nightTop),var(--tw-color-nightBottom));}
+  </style>
+</head>
+
+<body class="min-h-full flex items-center justify-center text-slate-900 dark:text-slate-100 transition-colors duration-300">
+
+<!-- LOGIN CARD -->
+<section id="loginSection" class="w-full max-w-sm p-8 space-y-4 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur shadow-xl shadow-inner-glow">
+
+  <h1 class="font-press text-xs tracking-widest flex items-center justify-center gap-2">
+    <i class="fa-solid fa-user-astronaut text-blue-500 text-lg"></i>UniSphere
+  </h1>
+
+  <h2 class="text-xl font-bold text-center">Admin Login</h2>
+
+  <input id="email" type="email" placeholder="Email" class="w-full px-4 py-3 rounded-lg bg-white/80 dark:bg-slate-700/70 border focus:ring-2 focus:ring-blue-500 outline-none"/>
+
+  <input id="password" type="password" placeholder="Password" class="w-full px-4 py-3 rounded-lg bg-white/80 dark:bg-slate-700/70 border focus:ring-2 focus:ring-blue-500 outline-none"/>
+
+  <button id="loginBtn" onclick="login()" class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">Login</button>
+
+  <p id="loginError" class="hidden text-sm text-center text-red-400"></p>
+</section>
+
+<!-- BANNER UPLOAD CARD -->
+<section id="uploadSection" class="hidden w-full max-w-md p-8 space-y-8 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur shadow-xl shadow-inner-glow">
+
+  <div class="flex items-center justify-between">
+    <h2 class="text-xl font-bold">Admin Panel</h2>
+    <button onclick="logout()" class="px-4 py-2 text-sm rounded-lg bg-red-500 hover:bg-red-600 text-white">Logout</button>
+  </div>
+
+  <div>
+    <h3 class="text-lg font-bold text-center mb-6">Upload Banner</h3>
+
+    <form id="uploadBannerForm" class="space-y-3">
+      <!-- Image Upload -->
+      <input id="bannerImage" type="file" accept="image/*" class="w-full rounded-lg bg-white/80 dark:bg-slate-700/70 border p-3" required>
+
+      <!-- URL Input -->
+      <input id="bannerLink" type="url" placeholder="Enter URL (e.g., google.com)" class="w-full rounded-lg bg-white/80 dark:bg-slate-700/70 border p-3" required>
+
+      <!-- Submit Button -->
+      <button type="submit" class="w-full py-3 rounded-lg bg-lime-400 hover:bg-lime-500 text-slate-900 font-semibold transition-colors">Update Banner</button>
+    </form>
+
+    <!-- Image Preview -->
+    <div id="bannerPreview" class="mt-4"></div>
+  </div>
+</section>
+
+<script>
+// Firebase Configuration
+firebase.initializeApp({
+  apiKey: "AIzaSyAn172ndihcZRqCBAxKYATkc3Hf_uNi4hw",
+  authDomain: "unisphere-35100.firebaseapp.com",
+  projectId: "unisphere-35100"
+});
+
+const auth = firebase.auth();
+const $ = id => document.getElementById(id);
+
+// Auth State Management
+auth.onAuthStateChanged(user => user ? showUpload() : showLogin());
+
+function showLogin() {
+  loginSection.classList.remove('hidden');
+  uploadSection.classList.add('hidden');
+}
+
+function showUpload() {
+  loginSection.classList.add('hidden');
+  uploadSection.classList.remove('hidden');
+}
+
+// Login Function
+async function login() {
+  const email = $('email').value.trim();
+  const pass = $('password').value.trim();
+  
+  loginError.classList.add('hidden');
+  
+  if (!email || !pass) {
+    loginError.textContent = 'Please fill both fields';
+    loginError.classList.remove('hidden');
+    return;
   }
 
-  document.getElementById("uploadBackgroundForm")?.addEventListener("submit", e => {
-    e.preventDefault();
-    handleUpload("background", "backgroundImage", "/api/upload/background");
-  });
+  toggleBtn(true, loginBtn, 'Logging in...');
+  
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch (e) {
+    loginError.textContent = mapErr(e);
+    loginError.classList.remove('hidden');
+  } finally {
+    toggleBtn(false, loginBtn, 'Login');
+  }
+}
 
-  document.getElementById("uploadBannerForm")?.addEventListener("submit", e => {
-    e.preventDefault();
-    handleUpload("banner", "bannerImage", "/api/upload/banner");
-  });
+// Logout Function
+function logout() {
+  auth.signOut();
+}
+
+// Error Message Mapping
+function mapErr(e) {
+  switch (e.code) {
+    case 'auth/user-not-found': return 'No user found with this email';
+    case 'auth/wrong-password': return 'Incorrect password';
+    case 'auth/invalid-email': return 'Invalid email address';
+    case 'auth/too-many-requests': return 'Too many attempts. Try again later';
+    default: return e.message;
+  }
+}
+
+// Image Preview
+bannerImage.onchange = () => {
+  bannerPreview.innerHTML = '';
+  const file = bannerImage.files[0];
+  
+  if (!file) return;
+  
+  if (file.size > 5 * 1024 * 1024) {
+    alert('File size must be less than 5MB');
+    bannerImage.value = '';
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = e => {
+    bannerPreview.innerHTML = `<img src="${e.target.result}" class="rounded w-full max-h-56 object-contain border mt-2" alt="Banner Preview">`;
+  };
+  reader.readAsDataURL(file);
+};
+
+// In your admin panel upload function
+uploadBannerForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  
+  if (!bannerImage.files.length) { 
+    alert('Choose an image'); 
+    return; 
+  }
+  
+  if (!bannerLink.value.trim()) { 
+    alert('Enter a URL'); 
+    return; 
+  }
+
+  const btn = uploadBannerForm.querySelector('button');
+  toggleBtn(true, btn, 'Uploading...');
+  
+  try {
+    const fd = new FormData();
+    fd.append('banner', bannerImage.files[0]);  // File field
+    fd.append('link', bannerLink.value.trim()); // Text field
+    
+    // Debug: Log what we're sending
+    console.log('📤 Sending to server:', {
+      hasFile: !!bannerImage.files,
+      fileName: bannerImage.files?.name,
+      linkValue: bannerLink.value.trim()
+    });
+
+    const res = await fetch('/api/upload/banner', { 
+      method: 'POST', 
+      body: fd 
+    });
+    
+    const result = await res.json();
+    
+    if (res.ok && result.success) {
+      alert('✅ ' + result.message);
+      // Clear form
+      bannerImage.value = '';
+      bannerLink.value = '';
+      bannerPreview.innerHTML = '';
+    } else {
+      alert('❌ ' + result.message);
+    }
+    
+  } catch (err) {
+    console.error('Upload error:', err);
+    alert('Upload failed: ' + err.message);
+  } finally {
+    toggleBtn(false, btn, 'Update Banner');
+  }
+});
+
+// Button Toggle Helper
+function toggleBtn(disabled, btn, label) {
+  btn.disabled = disabled;
+  btn.textContent = label;
+}
+
+// Add click handler to test banner functionality
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('✅ Admin panel loaded successfully');
+  console.log('📋 Upload both image and URL to create clickable banner');
+});
 </script>
+
 </body>
 </html>
