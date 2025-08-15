@@ -486,14 +486,15 @@
 <div class="relative mb-12 max-w-4xl mx-auto rounded-xl overflow-hidden
             shadow-lg hover:shadow-xl transition-shadow duration-300">
 
-  <!-- Clickable banner link -->
+  <!-- Clickable area -->
   <a id="bannerLinkWrapper"
      href="#"
      target="_blank"
      rel="noopener noreferrer"
-     class="block rounded-xl overflow-hidden focus:outline-none
-            focus:ring-4 focus:ring-blue-400/40">
+     class="block rounded-xl overflow-hidden
+            focus:outline-none focus:ring-4 focus:ring-blue-400/40">
 
+    <!-- Real banner (starts hidden) -->
     <img id="bannerImage"
          src=""
          alt="UniSphere Banner"
@@ -502,7 +503,7 @@
                 hover:scale-105" />
   </a>
 
-  <!-- Placeholder -->
+  <!-- Placeholder (absolutely positioned, no pointer events) -->
   <div id="bannerPlaceholder"
        class="absolute inset-0 flex items-center justify-center
               bg-gradient-to-br from-gray-200 to-gray-300
@@ -787,15 +788,9 @@ async function loadBanner() {
     const link = document.getElementById('bannerLinkWrapper');
 
     if (imageUrl) {
-      // Format URL - add https:// if missing
-      let formattedUrl = linkUrl || '#';
-      if (linkUrl && !linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')) {
-        formattedUrl = 'https://' + linkUrl;
-      }
-
       // Set image and link
-      img.src = imageUrl;
-      link.href = formattedUrl;
+      img.src   = imageUrl;
+      link.href = linkUrl || '#';
 
       // Show image when loaded, hide placeholder
       img.onload = () => {
@@ -816,6 +811,7 @@ async function loadBanner() {
 
 // Load banner when page loads
 document.addEventListener('DOMContentLoaded', loadBanner);
+
 
 </script>
 
