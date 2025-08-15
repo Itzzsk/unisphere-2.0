@@ -87,7 +87,10 @@
 firebase.initializeApp({
   apiKey: "AIzaSyAn172ndihcZRqCBAxKYATkc3Hf_uNi4hw",
   authDomain: "unisphere-35100.firebaseapp.com",
-  projectId: "unisphere-35100"
+  projectId: "unisphere-35100",
+  storageBucket: "unisphere-35100.firebasestorage.app",
+  messagingSenderId: "331319571025",
+  appId: "1:331319571025:web:f21eaacd723daff8533e70"
 });
 
 const auth = firebase.auth();
@@ -167,7 +170,7 @@ bannerImage.onchange = () => {
   reader.readAsDataURL(file);
 };
 
-// In your admin panel upload function
+// Banner Upload Form Handler
 uploadBannerForm.addEventListener('submit', async e => {
   e.preventDefault();
   
@@ -181,17 +184,22 @@ uploadBannerForm.addEventListener('submit', async e => {
     return; 
   }
 
+  if (!auth.currentUser) {
+    alert('Please log in first');
+    showLogin();
+    return;
+  }
+
   const btn = uploadBannerForm.querySelector('button');
   toggleBtn(true, btn, 'Uploading...');
   
   try {
     const fd = new FormData();
-    fd.append('banner', bannerImage.files[0]);  // File field
-    fd.append('link', bannerLink.value.trim()); // Text field
+    fd.append('banner', bannerImage.files[0]);
+    fd.append('link', bannerLink.value.trim());
     
-    // Debug: Log what we're sending
-    console.log('📤 Sending to server:', {
-      hasFile: !!bannerImage.files,
+    console.log('📤 Uploading banner:', {
+      hasFile: !!bannerImage.files[0],
       fileName: bannerImage.files?.name,
       linkValue: bannerLink.value.trim()
     });
@@ -203,14 +211,14 @@ uploadBannerForm.addEventListener('submit', async e => {
     
     const result = await res.json();
     
-    if (res.ok && result.success) {
-      alert('✅ ' + result.message);
+    if (res.ok) {
+      alert('✅ ' + (result.message || 'Banner uploaded successfully'));
       // Clear form
       bannerImage.value = '';
       bannerLink.value = '';
       bannerPreview.innerHTML = '';
     } else {
-      alert('❌ ' + result.message);
+      alert('❌ ' + (result.message || 'Upload failed'));
     }
     
   } catch (err) {
@@ -227,10 +235,10 @@ function toggleBtn(disabled, btn, label) {
   btn.textContent = label;
 }
 
-// Add click handler to test banner functionality
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('✅ Admin panel loaded successfully');
-  console.log('📋 Upload both image and URL to create clickable banner');
+  console.log('✅ Admin banner panel loaded');
+  console.log('📋 Ready to upload banner with image + URL');
 });
 </script>
 
