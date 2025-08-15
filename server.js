@@ -5,7 +5,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
 const path = require('path');
-const { isToxic, isImageUnsafe } = require('./moderation');
+const { isToxic, isImageUnsafe, moderateText } = require('./moderation');
 const BadWord = require('./models/moderation');
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -15,6 +15,7 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:5000',
+    'http://localhost:8080',
     'https://res.cloudinary.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -32,38 +33,104 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 // MongoDB connect
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => {
   console.log('✅ MongoDB connected');
 }).catch(err => {
   console.error('❌ MongoDB connection error:', err.message);
   process.exit(1);
 });
 
-// Schemas
+// Enhanced Schemas with Poll Support
 const postSchema = new mongoose.Schema({
-  content: { type: String, trim: true },
-  imageUrl: { type: String, trim: true },
-  createdAt: { type: Date, default: Date.now },
-  comments: [{
-    content: { type: String, required: true, trim: true },
-    createdAt: { type: Date, default: Date.now }
+  type: { 
+    type: String, 
+    enum: ['text', 'poll'], 
+    default: 'text' 
+  },
+  content: { 
+    type: String, 
+    trim: true,
+    maxlength: 1000
+  },
+  question: { 
+    type: String, 
+    trim: true,
+    maxlength: 500
+  },
+  options: [{
+    text: { 
+      type: String, 
+      required: true, 
+      trim: true,
+      maxlength: 200
+    },
+    votes: { 
+      type: Number, 
+      default: 0 
+    },
+    voters: [{ 
+      type: String // User IDs who voted for this option
+    }]
   }],
-  likes: { type: Number, default: 0 }
+  allowMultiple: { 
+    type: Boolean, 
+    default: false 
+  },
+  totalVotes: { 
+    type: Number, 
+    default: 0 
+  },
+  imageUrl: { 
+    type: String, 
+    trim: true 
+  },
+  createdAt: { 
+    type: Date, 
+    default: Date.now 
+  },
+  comments: [{
+    content: { 
+      type: String, 
+      required: true, 
+      trim: true,
+      maxlength: 500
+    },
+    createdAt: { 
+      type: Date, 
+      default: Date.now 
+    }
+  }],
+  likes: { 
+    type: Number, 
+    default: 0 
+  },
+  likedBy: [{ 
+    type: String // User IDs who liked this post
+  }]
 });
 
 const bannerSchema = new mongoose.Schema({
   imageUrl: String,
+  linkUrl: String,  // Added linkUrl field
   updatedAt: { type: Date, default: Date.now }
 });
 
@@ -77,54 +144,180 @@ const Post = mongoose.model('Post', postSchema);
 const Banner = mongoose.model('Banner', bannerSchema);
 const Background = mongoose.model('Background', backgroundSchema);
 
+// Moderation Middleware
+async function moderateAllContent(req, res, next) {
+  try {
+    const { content, question, options } = req.body;
+    
+    // Moderate text content
+    if (content) {
+      const moderationResult = await moderateText(content, ['en', 'es', 'fr', 'hi', 'kn']);
+      if (moderationResult.isBlocked) {
+        return res.status(400).json({
+          message: 'Content contains inappropriate material',
+          details: moderationResult.reasons
+        });
+      }
+    }
+    
+    // Moderate poll question
+    if (question) {
+      const moderationResult = await moderateText(question, ['en', 'es', 'fr', 'hi', 'kn']);
+      if (moderationResult.isBlocked) {
+        return res.status(400).json({
+          message: 'Poll question contains inappropriate material',
+          details: moderationResult.reasons
+        });
+      }
+    }
+    
+    // Moderate poll options
+    if (options && Array.isArray(options)) {
+      for (const option of options) {
+        if (option.text) {
+          const moderationResult = await moderateText(option.text, ['en', 'es', 'fr', 'hi', 'kn']);
+          if (moderationResult.isBlocked) {
+            return res.status(400).json({
+              message: `Poll option "${option.text}" contains inappropriate material`,
+              details: moderationResult.reasons
+            });
+          }
+        }
+      }
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Moderation error:', error);
+    res.status(500).json({ message: 'Content moderation failed' });
+  }
+}
+
 // Routes
 
-// Upload banner image
-app.post('/api/upload/banner', upload.single('banner'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: 'No banner image uploaded' });
+// FIXED: Use upload.fields() instead of upload.single()
+app.post('/api/upload/banner', upload.fields([
+  { name: 'banner', maxCount: 1 },
+  { name: 'link', maxCount: 1 }
+]), async (req, res) => {
+  
+  // Debug logs to see what's received
+  console.log('🔍 Files received:', req.files);
+  console.log('🔍 Body received:', req.body);
+  console.log('🔍 Body keys:', Object.keys(req.body));
+  
+  // Extract data properly
+  const bannerFile = req.files && req.files['banner'] ? req.files['banner'][0] : null;
+  const linkUrl = req.body.link;
+
+  console.log('📝 Extracted data:', {
+    hasFile: !!bannerFile,
+    linkUrl: linkUrl,
+    linkType: typeof linkUrl
+  });
+
+  // Validation
+  if (!bannerFile) {
+    console.log('❌ No banner file found');
+    return res.status(400).json({ message: 'No banner image uploaded' });
+  }
+  
+  if (!linkUrl || linkUrl.trim() === '') {
+    console.log('❌ No link URL found');
+    return res.status(400).json({ message: 'Banner link URL is required' });
+  }
+
   try {
-    const b64 = Buffer.from(req.file.buffer).toString("base64");
-    const dataUri = `data:${req.file.mimetype};base64,${b64}`;
-    const result = await cloudinary.uploader.upload(dataUri, {
+    // 1. Moderation check
+    const unsafe = await isImageUnsafe(bannerFile.buffer, bannerFile.mimetype);
+    if (unsafe) {
+      return res.status(400).json({ message: 'Banner image contains inappropriate content' });
+    }
+
+    // 2. Upload to Cloudinary
+    const dataUri = `data:${bannerFile.mimetype};base64,${bannerFile.buffer.toString('base64')}`;
+    const { secure_url } = await cloudinary.uploader.upload(dataUri, {
       folder: 'banner',
       resource_type: 'image'
     });
-    await Banner.findOneAndUpdate({}, {
-      imageUrl: result.secure_url,
-      updatedAt: new Date()
-    }, { upsert: true, new: true });
-    res.json({ message: 'Banner uploaded', imageUrl: result.secure_url });
-  } catch (error) {
-    console.error("Banner upload error:", error);
-    res.status(500).json({ message: 'Banner upload failed' });
+
+    console.log('☁️ Cloudinary upload successful:', secure_url);
+
+    // 3. Save to database with BOTH imageUrl and linkUrl
+    const bannerDoc = await Banner.findOneAndUpdate(
+      {}, // Empty filter = find any document
+      {
+        imageUrl: secure_url,
+        linkUrl: linkUrl.trim(),
+        updatedAt: new Date()
+      },
+      { 
+        upsert: true,  // Create if doesn't exist
+        new: true,     // Return updated document
+        runValidators: true
+      }
+    );
+
+    console.log('💾 Banner saved to database:', {
+      id: bannerDoc._id,
+      imageUrl: bannerDoc.imageUrl,
+      linkUrl: bannerDoc.linkUrl,
+      updatedAt: bannerDoc.updatedAt
+    });
+
+    return res.json({ 
+      message: 'Banner uploaded successfully', 
+      imageUrl: secure_url, 
+      linkUrl: linkUrl.trim(),
+      success: true
+    });
+
+  } catch (err) {
+    console.error('❌ Banner upload error:', err);
+    return res.status(500).json({ message: 'Banner upload failed: ' + err.message });
   }
 });
 
-// Get banner image
-app.get('/api/banner', async (req, res) => {
+
+// Debug route to check database contents
+app.get('/api/debug/banner', async (req, res) => {
   try {
     const banner = await Banner.findOne();
-    res.json({ imageUrl: banner ? banner.imageUrl : null });
-  } catch (error) {
-    console.error("Banner fetch error:", error);
-    res.status(500).json({ message: 'Failed to fetch banner' });
+    res.json({
+      exists: !!banner,
+      data: banner,
+      imageUrl: banner?.imageUrl || null,
+      linkUrl: banner?.linkUrl || null,
+      updatedAt: banner?.updatedAt || null
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
 // Upload background image
 app.post('/api/upload/background', upload.single('background'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No background image uploaded' });
+  
   try {
+    // Check image safety
+    const imageUnsafe = await isImageUnsafe(req.file.buffer, req.file.mimetype);
+    if (imageUnsafe === true) {
+      return res.status(400).json({ message: 'Background image contains inappropriate content' });
+    }
+    
     const b64 = Buffer.from(req.file.buffer).toString("base64");
     const dataUri = `data:${req.file.mimetype};base64,${b64}`;
     const result = await cloudinary.uploader.upload(dataUri, {
       folder: 'background',
       resource_type: 'image'
     });
+    
     await Background.findOneAndUpdate({}, {
       imageUrl: result.secure_url,
       updatedAt: new Date()
     }, { upsert: true, new: true });
+    
     res.json({ message: 'Background uploaded', imageUrl: result.secure_url });
   } catch (error) {
     console.error("Background upload error:", error);
@@ -143,7 +336,7 @@ app.get('/api/background', async (req, res) => {
   }
 });
 
-// Upload post image
+// Upload post image with moderation
 app.post('/api/upload/post', upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
   
@@ -156,7 +349,6 @@ app.post('/api/upload/post', upload.single('image'), async (req, res) => {
     }
     
     if (imageUnsafe === null) {
-      // Fail-safe: block if we can't verify safety
       return res.status(400).json({ message: 'Unable to verify image safety - upload blocked' });
     }
 
@@ -175,31 +367,66 @@ app.post('/api/upload/post', upload.single('image'), async (req, res) => {
   }
 });
 
-// Alternative approach - use isToxic directly
-app.post('/api/posts', async (req, res) => {
+// Create posts (both text and poll) with comprehensive moderation
+app.post('/api/posts', moderateAllContent, async (req, res) => {
   try {
-    const { content, imageUrl } = req.body;
+    const { type, content, question, options, allowMultiple, imageUrl } = req.body;
     
-    if (!content && !imageUrl) {
-      return res.status(400).json({ message: 'Post requires text or image' });
+    // Validate post type
+    if (!['text', 'poll'].includes(type)) {
+      return res.status(400).json({ message: 'Invalid post type' });
     }
-
-    if (content) {
-      const toxicCheck = await isToxic(content);
-      if (toxicCheck[0] === true) {
-        return res.status(400).json({ message: 'Content flagged as inappropriate' });
+    
+    if (type === 'text') {
+      // Text post validation
+      if (!content && !imageUrl) {
+        return res.status(400).json({ message: 'Text post requires content or image' });
       }
+      
+      const newPost = new Post({
+        type: 'text',
+        content,
+        imageUrl
+      });
+      
+      await newPost.save();
+      res.status(201).json({ message: 'Post created successfully', post: newPost });
+      
+    } else if (type === 'poll') {
+      // Poll validation
+      if (!question) {
+        return res.status(400).json({ message: 'Poll requires a question' });
+      }
+      
+      if (!options || !Array.isArray(options) || options.length < 2) {
+        return res.status(400).json({ message: 'Poll requires at least 2 options' });
+      }
+      
+      if (options.length > 6) {
+        return res.status(400).json({ message: 'Poll cannot have more than 6 options' });
+      }
+      
+      const newPost = new Post({
+        type: 'poll',
+        question,
+        options: options.map(option => ({
+          text: option.text,
+          votes: 0,
+          voters: []
+        })),
+        allowMultiple: allowMultiple || false,
+        totalVotes: 0
+      });
+      
+      await newPost.save();
+      res.status(201).json({ message: 'Poll created successfully', post: newPost });
     }
-
-    const newPost = new Post({ content, imageUrl });
-    await newPost.save();
-    res.status(201).json({ message: 'Post created successfully', post: newPost });
+    
   } catch (error) {
     console.error("Post creation error:", error);
     res.status(500).json({ message: 'Error creating post' });
   }
 });
-
 
 // Get all posts
 app.get('/api/posts', async (req, res) => {
@@ -215,30 +442,88 @@ app.get('/api/posts', async (req, res) => {
 // Like a post
 app.post('/api/posts/:postId/like', async (req, res) => {
   try {
-    const post = await Post.findById(req.params.postId);
+    const { postId } = req.params;
+    const { liked } = req.body;
+    const userId = req.body.userId || req.ip; // Use IP as fallback for user identification
+    
+    const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ message: 'Post not found' });
     
-    const liked = !!req.body.liked;
-    post.likes += liked ? 1 : -1;
-    if (post.likes < 0) post.likes = 0;
+    const hasLiked = post.likedBy.includes(userId);
+    
+    if (liked && !hasLiked) {
+      post.likes += 1;
+      post.likedBy.push(userId);
+    } else if (!liked && hasLiked) {
+      post.likes = Math.max(0, post.likes - 1);
+      post.likedBy = post.likedBy.filter(id => id !== userId);
+    }
     
     await post.save();
-    res.json({ likes: post.likes });
+    res.json({ 
+      likes: post.likes, 
+      liked: post.likedBy.includes(userId) 
+    });
   } catch (error) {
     console.error('Like error:', error);
     res.status(500).json({ message: 'Failed to like post' });
   }
 });
 
-// Add comment to post (consistent with post moderation)
+// Vote on poll
+app.post('/api/posts/:postId/vote', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { optionIndex } = req.body;
+    const userId = req.body.userId || req.ip;
+    
+    const post = await Post.findById(postId);
+    if (!post || post.type !== 'poll') {
+      return res.status(404).json({ message: 'Poll not found' });
+    }
+    
+    if (optionIndex < 0 || optionIndex >= post.options.length) {
+      return res.status(400).json({ message: 'Invalid option' });
+    }
+    
+    const option = post.options[optionIndex];
+    const hasVoted = option.voters.includes(userId);
+    
+    if (!post.allowMultiple) {
+      // Remove user's previous votes if single selection
+      post.options.forEach(opt => {
+        if (opt.voters.includes(userId)) {
+          opt.votes = Math.max(0, opt.votes - 1);
+          opt.voters = opt.voters.filter(id => id !== userId);
+          post.totalVotes = Math.max(0, post.totalVotes - 1);
+        }
+      });
+    }
+    
+    if (!hasVoted) {
+      option.votes += 1;
+      option.voters.push(userId);
+      post.totalVotes += 1;
+    }
+    
+    await post.save();
+    res.json({ 
+      message: 'Vote recorded successfully', 
+      post 
+    });
+  } catch (error) {
+    console.error('Vote error:', error);
+    res.status(500).json({ message: 'Failed to record vote' });
+  }
+});
+
+// Add comment to post with comprehensive moderation
 app.post('/api/posts/:postId/comments', async (req, res) => {
   try {
     const { content } = req.body;
     if (!content) return res.status(400).json({ message: 'Comment cannot be empty' });
 
-    // Import moderateText directly in the route
-    const { moderateText } = require('./moderation');
-    
+    // Moderate comment content
     const moderationResult = await moderateText(content, ['en', 'es', 'fr', 'hi', 'kn']);
     
     if (moderationResult.isBlocked) {
@@ -270,7 +555,6 @@ app.post('/api/posts/:postId/comments', async (req, res) => {
   }
 });
 
-
 // Get comments for a post
 app.get('/api/posts/:postId/comments', async (req, res) => {
   try {
@@ -290,10 +574,37 @@ app.get('/upload.html', (req, res) => {
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    features: ['text-posts', 'polls', 'comments', 'likes', 'image-uploads', 'moderation', 'clickable-banners']
+  });
+});
+
+// Global error handler
+app.use((error, req, res, next) => {
+  console.error('Global error:', error);
+  
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'File too large' });
+    }
+  }
+  
+  res.status(500).json({ 
+    message: 'Internal server error'
+  });
+});
+
 // 404 handler
 app.use((req, res) => res.status(404).json({ message: "❌ Route Not Found" }));
 
 // Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`📊 Features: Text Posts, Polls, Comments, Likes, Image Uploads`);
+  console.log(`🔒 Moderation: Active for all content types`);
+  console.log(`🎯 Banner System: Clickable banners with custom URLs`);
 });
