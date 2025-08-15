@@ -3,12 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>UniSphere</title>
+  <title>UniSphere - Anonymous Social Platform</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="UniSphere - A safe and anonymous platform for students to share thoughts, confessions, and experiences freely.">
+  <meta name="keywords" content="anonymous, social, platform, students, confession, thoughts">
+  <meta name="author" content="UniSphere">
+  
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#3B82F6">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
@@ -17,237 +29,810 @@
           colors: {
             darkgreenbg: '#1F2A25',
           },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-in-out',
+            'slide-up': 'slideUp 0.3s ease-out',
+            'bounce-in': 'bounceIn 0.5s ease-out',
+            'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'spin': 'spin 1s linear infinite',
+            'slide-in-right': 'slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+            'hamburger-top': 'hamburgerTop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+            'hamburger-middle': 'hamburgerMiddle 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+            'hamburger-bottom': 'hamburgerBottom 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(10px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+            bounceIn: {
+              '0%': { transform: 'scale(0.3)', opacity: '0' },
+              '50%': { transform: 'scale(1.05)' },
+              '70%': { transform: 'scale(0.9)' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            },
+            slideInRight: {
+              '0%': { transform: 'translateX(100%)' },
+              '100%': { transform: 'translateX(0%)' },
+            },
+            hamburgerTop: {
+              '0%': { transform: 'rotate(0) translate(0, 0)' },
+              '100%': { transform: 'rotate(45deg) translate(6px, 6px)' },
+            },
+            hamburgerMiddle: {
+              '0%': { opacity: '1', transform: 'translateX(0)' },
+              '100%': { opacity: '0', transform: 'translateX(20px)' },
+            },
+            hamburgerBottom: {
+              '0%': { transform: 'rotate(0) translate(0, 0)' },
+              '100%': { transform: 'rotate(-45deg) translate(6px, -6px)' },
+            },
+          },
+          transitionTimingFunction: {
+            'bounce-in': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+          }
         },
       },
     };
   </script>
-<!-- Include in <head> -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
 
-  <!-- In CSS -->  
   <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Only keep CSS that Tailwind can't handle */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+
+    .dark ::-webkit-scrollbar-track {
+      background: #374151;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+      transition: background 0.2s ease;
+    }
+
+    .dark ::-webkit-scrollbar-thumb {
+      background: #6b7280;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+
+    /* Hamburger animation states */
+    .hamburger-active .bar:nth-child(1) {
+      transform: rotate(45deg) translate(6px, 6px);
+      background-color: #3b82f6;
+    }
+
+    .hamburger-active .bar:nth-child(2) {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+
+    .hamburger-active .bar:nth-child(3) {
+      transform: rotate(-45deg) translate(6px, -6px);
+      background-color: #3b82f6;
+    }
+
+    /* Loading spinner */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      border: 3px solid rgba(59, 130, 246, 0.1);
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
 </head>
 
-<body class="font-poppins text-white relative overflow-x-hidden bg-[#0F1514]/30 ">
-<!-- Header -->
-<header class="fixed top-0 left-0 w-full p-4 flex justify-between items-center bg-white shadow-lg text-white z-50">
-  <!-- App Name -->
-  <h1 class="flex items-center space-x-2 font-bold font-['Press_Start_2p'] tracking-wider text-black">
-    <i class="fa-solid fa-user-astronaut text-xl"></i>
-    <span>UniSphere</span>
+<body class="font-poppins text-gray-900 dark:text-white relative overflow-x-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 min-h-screen transition-colors duration-300">
+
+<!-- ─────────────────────────  HEADER  ───────────────────────── -->
+<header
+  class="fixed inset-x-0 top-0 z-50 flex items-center justify-between p-4
+         bg-white dark:bg-gray-900               /* solid background */
+         shadow-lg border-b border-gray-200 dark:border-gray-700
+         transition-colors duration-300">
+
+  <!-- Brand -->
+  <h1 class="flex items-center gap-2 font-['Press_Start_2P'] font-bold tracking-wider">
+    <i class="fa-solid fa-user-astronaut text-blue-500 text-xl"></i>
+    <span class="text-sm sm:text-base text-gray-900 dark:text-white">UniSphere</span>
   </h1>
-  
+
   <!-- Hamburger -->
-  <div class="menu cursor-pointer" onclick="toggleMenu()">
-    <div class="bar1"></div>
-    <div class="bar2"></div>
-    <div class="bar3"></div>
-  </div>
+  <button id="hamburgerToggle"
+          aria-label="Toggle menu"
+          aria-expanded="false"
+          onclick="toggleMenu()"
+          class="hamburger-menu flex flex-col justify-between w-7 h-5 transition-transform duration-200 hover:scale-105">
+    <span class="bar h-0.5 w-full bg-gray-700 dark:bg-gray-200 rounded-sm transition-all"></span>
+    <span class="bar h-0.5 w-full bg-gray-700 dark:bg-gray-200 rounded-sm transition-all"></span>
+    <span class="bar h-0.5 w-full bg-gray-700 dark:bg-gray-200 rounded-sm transition-all"></span>
+  </button>
 
-  <!-- Slide-out Menu and Overlay -->
-  <div id="overlay" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden" onclick="toggleMenu()"></div>
+  <!-- Dimmed background -->
+  <div id="overlay"
+       onclick="toggleMenu()"
+       class="fixed inset-0 z-40 bg-black/50 dark:bg-black/70 backdrop-blur-sm
+              opacity-0 invisible transition-opacity"></div>
 
-  <div id="mobile-menu" class="fixed top-0 right-0 h-full w-1/2 bg-white shadow-lg z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
-    <ul class="p-6 space-y-4 mt-8">
-      <li>
-        <button id="openAbout" class="flex items-center space-x-2 text-lg font-bold text-black font-[Inter]">
-          <i class="fa-solid fa-circle-info"></i>
-          <span>About</span>
+  <!-- Mobile drawer -->
+  <nav id="mobile-menu"
+       role="navigation" aria-label="Main navigation"
+       class="fixed top-0 right-0 z-50 h-full w-80 max-w-[85vw]
+              bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700
+              shadow-2xl translate-x-full transition-transform duration-300 ease-in-out">
+
+    <div class="p-6">
+      <!-- Drawer header -->
+      <div class="flex items-center justify-between mb-8 pb-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Menu</h2>
+        <button onclick="toggleMenu()"
+                class="p-2 rounded-lg text-gray-500 hover:text-gray-700
+                       dark:text-gray-400 dark:hover:text-gray-200
+                       hover:bg-gray-100 dark:hover:bg-gray-700">
+          <i class="fas fa-times text-xl"></i>
         </button>
-      </li>
-      
-      <li>
-        <a href="upload.html" 
-           class="flex items-center space-x-2 text-lg font-semibold text-black font-[Inter]" 
-           target="_blank" 
-           rel="noopener noreferrer">
-          <i class="fa-solid fa-user-shield"></i>
-          <span>Admin login</span>
-        </a>
-      </li>
-    </ul>
-  </div>
+      </div>
+
+      <!-- Drawer items -->
+      <ul class="space-y-3">
+        <li class="menu-item opacity-0 translate-x-8 transition-all">
+          <button id="themeToggle"
+                  class="flex items-center gap-3 w-full p-3 rounded-lg text-lg font-medium
+                         text-gray-700 hover:text-blue-600 hover:bg-gray-100
+                         dark:text-gray-300 dark:hover:text-blue-400 dark:hover:bg-gray-700">
+            <i class="fa-solid fa-moon w-6 text-xl"></i> Dark&nbsp;Mode
+          </button>
+        </li>
+
+        <li class="menu-item opacity-0 translate-x-8 transition-all delay-100">
+          <button id="openAbout"
+                  class="flex items-center gap-3 w-full p-3 rounded-lg text-lg font-medium
+                         text-gray-700 hover:text-blue-600 hover:bg-gray-100
+                         dark:text-gray-300 dark:hover:text-blue-400 dark:hover:bg-gray-700">
+            <i class="fa-solid fa-circle-info w-6 text-xl"></i> About
+          </button>
+        </li>
+
+        <li class="menu-item opacity-0 translate-x-8 transition-all delay-200">
+          <a href="upload.html" target="_blank" rel="noopener"
+             class="flex items-center gap-3 w-full p-3 rounded-lg text-lg font-medium
+                    text-gray-700 hover:text-blue-600 hover:bg-gray-100
+                    dark:text-gray-300 dark:hover:text-blue-400 dark:hover:bg-gray-700">
+            <i class="fa-solid fa-user-shield w-6 text-xl"></i> Admin&nbsp;Portal
+          </a>
+        </li>
+
+        <li class="menu-item opacity-0 translate-x-8 transition-all delay-300">
+          <hr class="border-gray-200 dark:border-gray-700 my-4">
+          <button onclick="showTab('add');toggleMenu();"
+                  class="flex items-center gap-3 w-full p-3 rounded-lg text-lg font-medium
+                         text-blue-600 hover:text-blue-700 hover:bg-blue-50
+                         dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20">
+            <i class="fa-solid fa-plus w-6 text-xl"></i> Create&nbsp;Post
+          </button>
+        </li>
+      </ul>
+    </div>
+  </nav>
 </header>
 
 <!-- About Section -->
-
-
-<div id="aboutSection" class="fixed inset-0 bg-white/50 backdrop-blur-md border border-white/20 rounded-xl flex flex-col items-center p-6 overflow-y-auto hidden z-50">
+<div id="aboutSection" 
+     class="fixed inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md flex flex-col items-center p-6 overflow-y-auto hidden z-50 transition-all duration-300" 
+     role="dialog" 
+     aria-modal="true" 
+     aria-labelledby="aboutTitle">
   
-  <!-- Heading -->
-  <div class="flex items-center space-x-2 mb-4 mt-6">
-    <i class="fa-solid fa-user-astronaut text-black text-2xl drop-shadow-lg"></i>
-    <h1 class="text-2xl font-bold text-black drop-shadow-lg">About UniSphere</h1>
-  </div>
-
-  <!-- Balanced-Length Description -->
-  <p class="text-center text-base max-w-2xl leading-relaxed px-4 text-black drop-shadow-md">
-    <strong>Speak Your Mind, Anonymously.</strong><br><br>
-    UniSphere is a safe and open platform for students to share thoughts, confessions, and experiences without revealing their identity. 
-    Whether it's celebrating a win, venting frustrations, or starting an important conversation, you can express yourself freely here.<br><br>
-    No usernames. No pressure. Just honest voices in a supportive space.
-  </p>
-
-  <!-- Developer Info -->
-  <p class="text-black text-sm mt-6 drop-shadow-sm">Developer:</p>
-
-  <!-- Social Icons -->
-  <div class="flex items-center space-x-6 mt-2">
-    <a href="https://www.instagram.com/skanda.umesh/profilecard/?igsh=MmxqanQyaHRrN2I1" target="_blank"
-       class="text-pink-600 text-2xl hover:text-pink-400 transition drop-shadow">
-      <i class="fab fa-instagram"></i>
-    </a>
-    <a href="https://www.linkedin.com/in/skanda-umesh-88b16432b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank"
-       class="text-blue-500 text-2xl hover:text-blue-400 transition drop-shadow">
-      <i class="fab fa-linkedin"></i>
-    </a>
-  </div>
-
   <!-- Close Button -->
-  <button id="closeAbout" class="mt-6 mb-6 bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition drop-shadow-md">
-    Close
+  <button id="closeAbout" 
+          class="absolute top-6 right-6 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+    <i class="fas fa-times"></i>
   </button>
+
+  <!-- Content -->
+  <div class="max-w-4xl mx-auto text-center mt-12">
+    <!-- Heading -->
+    <div class="flex items-center justify-center space-x-4 mb-8">
+      <i class="fa-solid fa-user-astronaut text-blue-500 text-4xl animate-bounce-in" aria-hidden="true"></i>
+      <h1 id="aboutTitle" class="text-4xl font-bold text-black dark:text-white">About UniSphere</h1>
+    </div>
+
+    <!-- Description -->
+    <div class="text-lg leading-relaxed text-gray-700 dark:text-gray-300 mb-8 space-y-4">
+      <p class="text-blue-600 dark:text-blue-400 font-semibold text-xl">
+        Speak Your Mind, Anonymously.
+      </p>
+      <p class="max-w-3xl mx-auto">
+        UniSphere is a safe and open platform for students to share thoughts, confessions, and experiences without revealing their identity. 
+        Whether it's celebrating a win, venting frustrations, or starting an important conversation, you can express yourself freely here.
+      </p>
+      <p class="text-gray-600 dark:text-gray-400">
+        No usernames. No pressure. Just honest voices in a supportive space.
+      </p>
+    </div>
+
+    <!-- Features -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="p-6 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+        <i class="fa-solid fa-shield-halved text-3xl text-green-500 mb-3" aria-hidden="true"></i>
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Safe & Secure</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400">Your privacy is protected</p>
+      </div>
+      <div class="p-6 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+        <i class="fa-solid fa-comments text-3xl text-purple-500 mb-3" aria-hidden="true"></i>
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Open Discussion</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400">Share thoughts freely</p>
+      </div>
+      <div class="p-6 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+        <i class="fa-solid fa-users text-3xl text-orange-500 mb-3" aria-hidden="true"></i>
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Community</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400">Connect with others</p>
+      </div>
+    </div>
+
+    <!-- Developer Info -->
+    <div class="text-center">
+      <p class="text-gray-700 dark:text-gray-300 text-sm mb-4">Developed with ❤️ by:</p>
+      
+      <!-- Social Icons -->
+      <div class="flex items-center justify-center space-x-6">
+        <a href="https://www.instagram.com/skanda.umesh/profilecard/?igsh=MmxqanQyaHRrN2I1" 
+           target="_blank"
+           class="text-pink-500 text-3xl hover:text-pink-400 transition-all transform hover:scale-110 p-2 rounded-lg hover:bg-pink-50 dark:hover:bg-pink-900/20"
+           aria-label="Follow on Instagram">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="https://www.linkedin.com/in/skanda-umesh-88b16432b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" 
+           target="_blank"
+           class="text-blue-500 text-3xl hover:text-blue-400 transition-all transform hover:scale-110 p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+           aria-label="Connect on LinkedIn">
+          <i class="fab fa-linkedin"></i>
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
 
-
-
-<!-- Add Post Section -->
+<!-- Create Post Modal -->
 <section id="add" class="tab-section hidden">
-  <div class="fixed inset-0 bg-white z-[1000] hidden" id="createPost">
-    <div class="flex items-center justify-between p-4 border-b border-gray-300">
-      <i class="fas fa-arrow-left text-2xl cursor-pointer" id="createPostBackButton"></i>
-      <h1 class="text-xl font-Quicksand">Create</h1>
-      <button class="border border-black px-4 py-2 rounded-lg" id="submitPostButton">Post</button>
-    </div>
-    <div class="p-4">
-      <textarea id="postContent" class="w-full h-32 p-2 border border-gray-300 rounded-lg mb-2" placeholder="Share your thoughts..."></textarea>
-      <input type="file" id="imageInput" accept="image/*" class="hidden" />
-      <button id="imageUploadButton" class="text-gray-600 p-2 rounded-lg border border-gray-300">
-        <i class="fas fa-image mr-2"></i>Add Image
+  <div class="fixed inset-0 bg-white dark:bg-gray-900 z-[1000] hidden transition-colors duration-300" 
+       id="createPost" 
+       role="dialog" 
+       aria-modal="true" 
+       aria-labelledby="createPostTitle">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <button id="createPostBackButton" 
+              class="text-2xl text-gray-600 dark:text-gray-400 hover:text-blue-500 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" 
+              aria-label="Go back">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
       </button>
-      <div id="imagePreview" class="mt-4"></div>
+      <h1 id="createPostTitle" class="text-xl font-semibold text-gray-900 dark:text-white">Create Post</h1>
+      <button class="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 px-6 py-2 rounded-lg text-white font-semibold transition-all focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 hover:shadow-lg relative overflow-hidden" 
+              id="submitPostButton">
+        <span class="submit-text relative z-10">Post</span>
+        <i class="fas fa-spinner fa-spin hidden submit-spinner ml-2 relative z-10" aria-hidden="true"></i>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-500"></div>
+      </button>
+    </div>
+    
+    <!-- Tab Container -->
+    <div class="relative">
+      <!-- Toggle bar -->
+      <div class="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg" role="tablist">
+          <button id="textPostToggle"
+                  class="tab-button flex-1 px-6 py-3 rounded-lg font-semibold bg-blue-500 text-white shadow-md -translate-y-0.5"
+                  role="tab" aria-selected="true" aria-controls="textPostSection">
+            <i class="fas fa-edit mr-2"></i>Text&nbsp;Post
+          </button>
+    
+          <button id="pollPostToggle"
+                  class="tab-button flex-1 px-6 py-3 rounded-lg font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500"
+                  role="tab" aria-selected="false" aria-controls="pollSection">
+            <i class="fas fa-poll mr-2"></i>Poll
+          </button>
+        </div>
+      </div>
+    
+
+      <!-- Tab Content Container -->
+      <div class="relative bg-gray-50 dark:bg-gray-900 min-h-[500px]">
+        <!-- Text Post Content -->
+        <div id="textPostSection" 
+             class="tab-content opacity-100 translate-y-0 pointer-events-auto relative p-6 transition-all duration-300" 
+             role="tabpanel" 
+             aria-labelledby="textPostToggle">
+          <textarea id="postContent" 
+                    class="w-full h-40 p-4 border border-gray-300 dark:border-gray-600 rounded-lg text-black dark:text-white bg-white dark:bg-gray-800 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:-translate-y-0.5 focus:shadow-lg transition-all duration-300" 
+                    placeholder="Share your thoughts anonymously..."
+                    maxlength="500"
+                    aria-label="Post content"></textarea>
+          
+          <div class="flex justify-between items-center mt-4 mb-4">
+            <input type="file" id="imageInput" accept="image/*" class="hidden" aria-label="Upload image" />
+            <button id="imageUploadButton" 
+                    class="flex items-center text-blue-600 dark:text-blue-400 p-3 rounded-lg border border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+              <i class="fas fa-image mr-2" aria-hidden="true"></i>Add Image
+            </button>
+            <span id="charCount" class="text-sm text-gray-500 dark:text-gray-400 font-medium px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">0/500</span>
+          </div>
+          
+          <div id="imagePreview" class="mt-4"></div>
+        </div>
+
+        <!-- Poll Post Content -->
+        <div id="pollSection" 
+             class="tab-content opacity-0 translate-y-2 pointer-events-none absolute top-0 left-0 right-0 p-6 transition-all duration-300" 
+             role="tabpanel" 
+             aria-labelledby="pollPostToggle">
+          <input type="text" 
+                 id="pollQuestion" 
+                 class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg mb-6 text-black dark:text-white bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:-translate-y-0.5 focus:shadow-lg transition-all duration-300" 
+                 placeholder="Ask a question..."
+                 maxlength="200"
+                 aria-label="Poll question">
+          
+          <div id="pollOptions" class="space-y-3 mb-6" role="group" aria-label="Poll options">
+            <div class="poll-option-input flex items-center space-x-3">
+              <input type="text" 
+                     class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white focus:ring-2 focus:ring-blue-500 focus:-translate-y-0.5 focus:shadow-md transition-all duration-300" 
+                     placeholder="Option 1"
+                     maxlength="100"
+                     aria-label="Poll option 1" />
+              <button class="text-red-500 hover:text-red-600 p-2 remove-option transition-colors hidden rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-110" 
+                      aria-label="Remove option">
+                <i class="fas fa-trash" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="poll-option-input flex items-center space-x-3">
+              <input type="text" 
+                     class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white focus:ring-2 focus:ring-blue-500 focus:-translate-y-0.5 focus:shadow-md transition-all duration-300" 
+                     placeholder="Option 2"
+                     maxlength="100"
+                     aria-label="Poll option 2" />
+              <button class="text-red-500 hover:text-red-600 p-2 remove-option transition-colors hidden rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-110" 
+                      aria-label="Remove option">
+                <i class="fas fa-trash" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+          
+          <button id="addPollOption" 
+                  class="w-full p-4 border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-lg text-blue-600 dark:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+            <i class="fas fa-plus mr-2" aria-hidden="true"></i>Add Option (Max 6)
+          </button>
+          
+          <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center text-blue-700 dark:text-blue-300 text-sm font-medium">
+                <i class="fas fa-info-circle mr-2" aria-hidden="true"></i>
+                <span>Poll Settings</span>
+              </div>
+              <label class="flex items-center text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+                <input type="checkbox" id="allowMultiple" class="mr-2 rounded text-blue-600 focus:ring-blue-500 focus:ring-2">
+                <span>Allow multiple selections</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-
 <!-- Create Post Floating Button -->
-<button onclick="showTab('add')" class="fixed bottom-[25px] right-[25px]
-  bg-black text-white w-14 h-14 rounded-full
-  shadow-lg z-10
-  flex items-center justify-center
-  ring-4 ring-black border-4 border-[#1A1A1D]
-  hover:scale-110 transition-all duration-200"
-  id="createPostButton" title="Create Post" aria-label="Create Post">
-  <i class="fa-solid fa-plus text-2xl"></i>
+<button onclick="showTab('add')" 
+        class="fixed bottom-6 right-6 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 w-16 h-16 rounded-full shadow-xl z-10 flex items-center justify-center hover:scale-110 transition-all duration-200 focus:ring-4 focus:ring-blue-300 group"
+        id="createPostButton" 
+        title="Create Post" 
+        aria-label="Create new post">
+  <i class="fa-solid fa-plus text-2xl text-white group-hover:rotate-90 transition-transform duration-200" aria-hidden="true"></i>
 </button>
 
-
-
 <!-- Main Content -->
-<main class="p-4 pb-24 mb-8 mt-16">
-  <!-- Banner -->
-  <div class="mb-10 rounded-xl overflow-hidden shadow-lg">
-    <img id="bannerImage" src="" alt="Banner" class="w-full h-48 md:h-60 object-cover rounded-xl hidden" />
-    <div id="bannerPlaceholder" class="w-full h-48 md:h-60 flex items-center justify-center bg-gray-700 rounded-xl text-gray-300">
-      No banner image found
+<main class="pt-20 pb-24 px-4" role="main">
+<!-- Banner -->
+<!-- Banner -->
+<div class="relative mb-12 max-w-4xl mx-auto rounded-xl overflow-hidden
+            shadow-lg hover:shadow-xl transition-shadow duration-300">
+
+  <!-- Clickable area -->
+  <a id="bannerLinkWrapper"
+     href="#"
+     target="_blank"
+     rel="noopener noreferrer"
+     class="block rounded-xl overflow-hidden
+            focus:outline-none focus:ring-4 focus:ring-blue-400/40">
+
+    <!-- Real banner (starts hidden) -->
+    <img id="bannerImage"
+         src=""
+         alt="UniSphere Banner"
+         class="w-full h-48 md:h-60 object-cover rounded-xl
+                opacity-0 transition-opacity duration-300
+                hover:scale-105" />
+  </a>
+
+  <!-- Placeholder (absolutely positioned, no pointer events) -->
+  <div id="bannerPlaceholder"
+       class="absolute inset-0 flex items-center justify-center
+              bg-gradient-to-br from-gray-200 to-gray-300
+              dark:from-gray-700 dark:to-gray-800
+              text-gray-500 dark:text-gray-400 rounded-xl
+              transition-colors duration-300 pointer-events-none"
+       aria-live="polite">
+
+    <div class="text-center">
+      <i class="fas fa-image text-5xl mb-3 animate-pulse-slow" aria-hidden="true"></i>
+      <p class="font-medium text-lg">No banner image found</p>
+      <p class="text-sm opacity-75">Upload a banner in the admin panel</p>
     </div>
   </div>
+</div>
 
-  <!-- Posts -->
-  <div id="postsContainer" class="w-full max-w-4xl mx-auto"></div>
+
+  <!-- Posts Container -->
+  <div id="postsContainer" 
+       class="w-full max-w-4xl mx-auto space-y-8" 
+       role="feed" 
+       aria-label="Posts feed"
+       aria-live="polite">
+    <!-- Initial Loading State -->
+    <div class="text-center py-12 animate-fade-in">
+      <div class="spinner mx-auto mb-4"></div>
+      <p class="text-gray-600 dark:text-gray-400 font-medium">Loading posts...</p>
+    </div>
+  </div>
 </main>
 
+<!-- Alert Container -->
+<div id="alertContainer" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2" aria-live="assertive"></div>
 
-
+<!-- JavaScript -->
 <script src="script.js"></script>
+
 <script>
-  function toggleMenu() {
-    const menu = document.getElementById("mobile-menu");
-    const menuIcon = document.querySelector(".menu");
-
-    // Toggle the 'show' class for smooth animations
-    menu.classList.toggle("show");
-    menuIcon.classList.toggle("active");
-
-    // Ensuring smooth transition
-    if (menu.classList.contains("show")) {
-        menu.style.transform = "translateX(0%)";
-    } else {
-        menu.style.transform = "translateX(100%)";
-    }
+// Enhanced Menu Toggle Function with Tailwind classes
+function toggleMenu() {
+  const menu = document.getElementById("mobile-menu");
+  const overlay = document.getElementById("overlay");
+  const hamburger = document.querySelector(".hamburger-menu");
+  
+  const isOpen = menu.classList.contains("translate-x-0");
+  
+  if (isOpen) {
+    // Close menu
+    menu.classList.remove("translate-x-0");
+    menu.classList.add("translate-x-full");
+    overlay.classList.remove("opacity-100", "visible");
+    overlay.classList.add("opacity-0", "invisible");
+    hamburger.classList.remove("hamburger-active");
+    hamburger.setAttribute("aria-expanded", "false");
+    document.body.style.overflow = "auto";
+    
+    // Reset menu items
+    const menuItems = document.querySelectorAll(".menu-item");
+    menuItems.forEach(item => {
+      item.classList.remove("opacity-100", "translate-x-0");
+      item.classList.add("opacity-0", "translate-x-8");
+    });
+  } else {
+    // Open menu
+    menu.classList.remove("translate-x-full");
+    menu.classList.add("translate-x-0");
+    overlay.classList.remove("opacity-0", "invisible");
+    overlay.classList.add("opacity-100", "visible");
+    hamburger.classList.add("hamburger-active");
+    hamburger.setAttribute("aria-expanded", "true");
+    document.body.style.overflow = "hidden";
+    
+    // Animate menu items
+    const menuItems = document.querySelectorAll(".menu-item");
+    menuItems.forEach(item => {
+      item.classList.remove("opacity-0", "translate-x-8");
+      item.classList.add("opacity-100", "translate-x-0");
+    });
+  }
 }
 
-  document.getElementById("openAbout")?.addEventListener("click", () => {
-    document.getElementById("aboutSection")?.classList.remove("hidden");
-  });
-  document.getElementById("closeAbout")?.addEventListener("click", () => {
-    document.getElementById("aboutSection")?.classList.add("hidden");
-  });
-  document.getElementById("createPostBackButton")?.addEventListener("click", () => {
-    document.getElementById("createPost")?.classList.add("hidden");
-    document.getElementById("home")?.classList.remove("hidden");
-    document.getElementById("add")?.classList.add("hidden");
-  });
+// Enhanced Tab-Switching Function with Tailwind classes
+function switchTab(activeTabId, inactiveTabId, activeContentId, inactiveContentId) {
+  const activeTab      = document.getElementById(activeTabId);
+  const inactiveTab    = document.getElementById(inactiveTabId);
+  const activeContent  = document.getElementById(activeContentId);
+  const inactiveContent= document.getElementById(inactiveContentId);
 
-  function showTab(tabId) {
-    document.querySelectorAll(".tab-section").forEach(section => {
-      section.classList.add("hidden");
-    });
-    document.getElementById(tabId)?.classList.remove("hidden");
-  }
+  if (!activeTab || !inactiveTab || !activeContent || !inactiveContent) return;
 
-  // Banner loading only; no background
-  async function loadBanner() {
-    try {
-      const bannerRes = await fetch('/api/banner');
-      if (bannerRes.ok) {
-        const { imageUrl } = await bannerRes.json();
-        const bannerImage = document.getElementById('bannerImage');
-        const bannerPlaceholder = document.getElementById('bannerPlaceholder');
-        if(imageUrl) {
-          bannerImage.src = imageUrl;
-          bannerImage.classList.remove('hidden');
-          bannerPlaceholder.style.display = 'none';
-        } else {
-          bannerImage.classList.add('hidden');
-          bannerPlaceholder.style.display = 'flex';
-        }
-      }
-    } catch(e) {
-      console.error('Error loading banner:', e);
-    }
-  }
+  /* ---------- Tab buttons ---------- */
+  // Activate selected tab
+  activeTab.classList.remove(
+    'bg-gray-200', 'dark:bg-gray-600',
+    'text-gray-700', 'dark:text-gray-300'
+  );
+  activeTab.classList.add(
+    'bg-blue-500', 'text-white',
+    'transform', '-translate-y-0.5', 'shadow-md'
+  );
+  activeTab.setAttribute('aria-selected', 'true');
 
-  window.addEventListener('DOMContentLoaded', loadBanner);
-  async function loadBackground() {
-    try {
-      const bgRes = await fetch('/api/background');
-      if (bgRes.ok) {
-        const { imageUrl } = await bgRes.json();
-        if (imageUrl) {
-          // Cache-bust in case the old image was cached
-          document.body.style.backgroundImage = `url(${imageUrl}?ts=${Date.now()})`;
-          document.body.style.backgroundRepeat = 'no-repeat';
-          document.body.style.backgroundPosition = 'center center';
-          document.body.style.backgroundSize = 'contain';
-        } else {
-          document.body.style.backgroundImage = '';
-        }
-      }
-    } catch (e) {
-      console.error('Error loading background:', e);
-    }
-  }
-  window.addEventListener('DOMContentLoaded', loadBackground);
+  // Deactivate other tab
+  inactiveTab.classList.remove(
+    'bg-blue-500', 'text-white',
+    'transform', '-translate-y-0.5', 'shadow-md'
+  );
+  inactiveTab.classList.add(
+    'bg-gray-200', 'dark:bg-gray-600',
+    'text-gray-700', 'dark:text-gray-300'
+  );
+  inactiveTab.setAttribute('aria-selected', 'false');
+
+  /* ---------- Tab panels ---------- */
+  // Hide currently visible panel
+  inactiveContent.classList.remove(
+    'opacity-100', 'translate-y-0', 'pointer-events-auto', 'relative'
+  );
+  inactiveContent.classList.add(
+    'opacity-0', 'translate-y-2', 'pointer-events-none',
+    'absolute', 'top-0', 'left-0', 'right-0'
+  );
+
+  // Show selected panel after short delay for smoother transition
+  setTimeout(() => {
+    activeContent.classList.remove(
+      'opacity-0', 'translate-y-2', 'pointer-events-none',
+      'absolute', 'top-0', 'left-0', 'right-0'
+    );
+    activeContent.classList.add(
+      'opacity-100', 'translate-y-0', 'pointer-events-auto', 'relative'
+    );
+  }, 150);
+}
+
+
+// Enhanced Show Tab Function
+function showTab(tabId) {
+  document.querySelectorAll(".tab-section").forEach(function(section) {
+    section.classList.add("hidden");
+  });
+  document.getElementById(tabId)?.classList.remove("hidden");
+  document.getElementById("createPost")?.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+// Enhanced Initialization
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 UniSphere Tailwind Version Initialized');
   
+  // Initialize tab switching
+  const textToggle = document.getElementById('textPostToggle');
+  const pollToggle = document.getElementById('pollPostToggle');
+  
+  if (textToggle && pollToggle) {
+    textToggle.addEventListener('click', () => {
+      switchTab('textPostToggle', 'pollPostToggle', 'textPostSection', 'pollSection');
+    });
+    
+    pollToggle.addEventListener('click', () => {
+      switchTab('pollPostToggle', 'textPostToggle', 'pollSection', 'textPostSection');
+    });
+  }
+
+  // Character counter with enhanced styling
+  const postContent = document.getElementById('postContent');
+  const charCount = document.getElementById('charCount');
+  
+  if (postContent && charCount) {
+    postContent.addEventListener('input', function() {
+      const count = this.value.length;
+      charCount.textContent = `${count}/500`;
+      
+      // Remove all color classes first
+      charCount.classList.remove(
+        "text-gray-500", 
+        "dark:text-gray-400", 
+        "text-yellow-500", 
+        "text-red-500", 
+        "bg-gray-100", 
+        "dark:bg-gray-700", 
+        "bg-yellow-100", 
+        "dark:bg-yellow-900/20", 
+        "bg-red-100", 
+        "dark:bg-red-900/20"
+      );
+      
+      if (count > 450) {
+        charCount.classList.add("text-red-500", "bg-red-100", "dark:bg-red-900/20");
+      } else if (count > 300) {
+        charCount.classList.add("text-yellow-500", "bg-yellow-100", "dark:bg-yellow-900/20");
+      } else {
+        charCount.classList.add("text-gray-500", "dark:text-gray-400", "bg-gray-100", "dark:bg-gray-700");
+      }
+    });
+  }
+
+  // Enhanced keyboard navigation
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      // Close mobile menu
+      const menu = document.getElementById("mobile-menu");
+      if (menu.classList.contains("translate-x-0")) {
+        toggleMenu();
+      }
+      
+      // Close about section
+      const aboutSection = document.getElementById("aboutSection");
+      if (aboutSection && !aboutSection.classList.contains("hidden")) {
+        aboutSection.classList.add("hidden");
+        document.body.style.overflow = "auto";
+      }
+      
+      // Close create post modal
+      const createPost = document.getElementById("createPost");
+      const add = document.getElementById("add");
+      if (createPost && !createPost.classList.contains("hidden")) {
+        createPost.classList.add("hidden");
+        add.classList.add("hidden");
+        document.body.style.overflow = "auto";
+      }
+    }
+  });
+
+  // Click outside to close
+  document.addEventListener('click', function(e) {
+    const menu = document.getElementById("mobile-menu");
+    const hamburger = document.querySelector(".hamburger-menu");
+    const overlay = document.getElementById("overlay");
+    
+    if (menu.classList.contains("translate-x-0") && 
+        !menu.contains(e.target) && 
+        !hamburger.contains(e.target) &&
+        e.target === overlay) {
+      toggleMenu();
+    }
+  });
+
+  // About section functionality
+  const openAbout = document.getElementById("openAbout");
+  const closeAbout = document.getElementById("closeAbout");
+  const aboutSection = document.getElementById("aboutSection");
+  
+  if (openAbout && aboutSection) {
+    openAbout.addEventListener("click", function() {
+      aboutSection.classList.remove("hidden");
+      aboutSection.classList.add("animate-fade-in");
+      document.body.style.overflow = "hidden";
+    });
+  }
+  
+  if (closeAbout && aboutSection) {
+    closeAbout.addEventListener("click", function() {
+      aboutSection.classList.add("hidden");
+      document.body.style.overflow = "auto";
+    });
+  }
+
+  // Create post functionality
+  const createPostBackBtn = document.getElementById("createPostBackButton");
+  const createPost = document.getElementById("createPost");
+  const add = document.getElementById("add");
+  
+  if (createPostBackBtn) {
+    createPostBackBtn.addEventListener("click", function() {
+      createPost?.classList.add("hidden");
+      add?.classList.add("hidden");
+      document.body.style.overflow = "auto";
+    });
+  }
+
+  console.log('✅ All Tailwind features initialized successfully');
+});
+async function loadBanner() {
+  console.log('🔄 Loading banner...');
+  
+  try {
+    const res = await fetch('/api/banner');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const { imageUrl, linkUrl } = await res.json();
+    console.log('📋 Banner data:', { imageUrl: !!imageUrl, linkUrl });
+    
+    const img  = document.getElementById('bannerImage');
+    const ph   = document.getElementById('bannerPlaceholder');
+    const link = document.getElementById('bannerLinkWrapper');
+
+    if (imageUrl) {
+      // Format URL - add https:// if missing
+      let formattedUrl = linkUrl || '#';
+      if (linkUrl && !linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')) {
+        formattedUrl = 'https://' + linkUrl;
+      }
+
+      // Set image and link
+      img.src = imageUrl;
+      link.href = formattedUrl;
+
+      // Show image when loaded, hide placeholder
+      img.onload = () => {
+        img.classList.remove('opacity-0');
+        ph.classList.add('hidden');
+        console.log('✅ Banner loaded - Opens:', formattedUrl);
+      };
+
+      img.onerror = () => {
+        console.error('❌ Failed to load banner image');
+        img.classList.add('opacity-0');
+        ph.classList.remove('hidden');
+        link.href = '#';
+      };
+    } else {
+      // No banner - show placeholder
+      console.log('ℹ️ No banner data found');
+      link.href = '#';
+      img.classList.add('opacity-0');
+      ph.classList.remove('hidden');
+    }
+  } catch (err) {
+    console.error('❌ Error loading banner:', err);
+    document.getElementById('bannerPlaceholder').classList.remove('hidden');
+  }
+}
+
+// Load banner when page loads
+document.addEventListener('DOMContentLoaded', loadBanner);
+
+
 </script>
+
 </body>
 </html>
-
