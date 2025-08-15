@@ -486,15 +486,14 @@
 <div class="relative mb-12 max-w-4xl mx-auto rounded-xl overflow-hidden
             shadow-lg hover:shadow-xl transition-shadow duration-300">
 
-  <!-- Clickable area -->
+  <!-- Clickable banner link -->
   <a id="bannerLinkWrapper"
      href="#"
      target="_blank"
      rel="noopener noreferrer"
-     class="block rounded-xl overflow-hidden
-            focus:outline-none focus:ring-4 focus:ring-blue-400/40">
+     class="block rounded-xl overflow-hidden focus:outline-none
+            focus:ring-4 focus:ring-blue-400/40">
 
-    <!-- Real banner (starts hidden) -->
     <img id="bannerImage"
          src=""
          alt="UniSphere Banner"
@@ -503,7 +502,7 @@
                 hover:scale-105" />
   </a>
 
-  <!-- Placeholder (absolutely positioned, no pointer events) -->
+  <!-- Placeholder -->
   <div id="bannerPlaceholder"
        class="absolute inset-0 flex items-center justify-center
               bg-gradient-to-br from-gray-200 to-gray-300
@@ -778,15 +777,11 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('✅ All Tailwind features initialized successfully');
 });
 async function loadBanner() {
-  console.log('🔄 Loading banner...');
-  
   try {
     const res = await fetch('/api/banner');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const { imageUrl, linkUrl } = await res.json();
-    console.log('📋 Banner data:', { imageUrl: !!imageUrl, linkUrl });
-    
     const img  = document.getElementById('bannerImage');
     const ph   = document.getElementById('bannerPlaceholder');
     const link = document.getElementById('bannerLinkWrapper');
@@ -806,31 +801,21 @@ async function loadBanner() {
       img.onload = () => {
         img.classList.remove('opacity-0');
         ph.classList.add('hidden');
-        console.log('✅ Banner loaded - Opens:', formattedUrl);
-      };
-
-      img.onerror = () => {
-        console.error('❌ Failed to load banner image');
-        img.classList.add('opacity-0');
-        ph.classList.remove('hidden');
-        link.href = '#';
       };
     } else {
       // No banner - show placeholder
-      console.log('ℹ️ No banner data found');
       link.href = '#';
       img.classList.add('opacity-0');
       ph.classList.remove('hidden');
     }
   } catch (err) {
-    console.error('❌ Error loading banner:', err);
+    console.error('Error loading banner:', err);
     document.getElementById('bannerPlaceholder').classList.remove('hidden');
   }
 }
 
 // Load banner when page loads
 document.addEventListener('DOMContentLoaded', loadBanner);
-
 
 </script>
 
