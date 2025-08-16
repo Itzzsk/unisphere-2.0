@@ -186,7 +186,7 @@ function initPollFunctions() {
   }
 }
 
-// User ID Management for Voting
+// User ID Management for Voting (kept for likes)
 function getUserIdForVoting() {
   let userId = localStorage.getItem('userId');
   if (!userId) {
@@ -445,148 +445,243 @@ function createTextPostHTML(post) {
     </div>
   `;
 }
-
-// Create Poll HTML
+// UPDATED: Create Poll HTML with COMPACT SIZE and Scrolling
 function createPollHTML(post) {
-  const userId = getUserIdForVoting();
-  
   return `
-    <div class="rounded-2xl shadow-lg mb-6 bg-white dark:bg-gray-800 p-6 border border-gray-200 dark:border-gray-700 transition-colors duration-300 hover:shadow-xl">
-      <div class="flex items-center mb-4 space-x-2">
-        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-          <i class="fas fa-poll text-white"></i>
+    <div class="rounded-xl shadow-md mb-4 bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300 hover:shadow-lg poll-compact mx-auto">
+      <div class="flex items-center mb-3 space-x-2">
+        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+          <i class="fas fa-poll text-white text-sm"></i>
         </div>
         <div class="flex-1">
-          <h1 class="font-poppins text-gray-900 dark:text-white font-semibold">Anonymous Poll</h1>
-          <span class="text-gray-500 dark:text-gray-400 text-sm">${getDetailedTimeAgo(post.createdAt)}</span>
+          <h1 class="font-poppins text-gray-900 dark:text-white font-medium text-sm">Anonymous Poll</h1>
+          <span class="text-gray-500 dark:text-gray-400 text-xs">${getDetailedTimeAgo(post.createdAt)}</span>
         </div>
       </div>
-      <h3 class="font-semibold text-lg text-gray-900 dark:text-white mb-4 caption-text">${escapeHtml(post.question)}</h3>
-      <div class="space-y-3 mb-4" id="poll-${post._id}">
+      <h3 class="font-medium text-base text-gray-900 dark:text-white mb-3 caption-text">${escapeHtml(post.question)}</h3>
+      
+      <!-- COMPACT SCROLLABLE OPTIONS -->
+      <div class="space-y-2 mb-3 poll-options-container overflow-y-auto scrollbar-thin pr-1" id="poll-${post._id}">
         ${post.options.map(function(option, index) {
-          const percentage = post.totalVotes > 0 ? Math.round((option.votes / post.totalVotes) * 100) : 0;
-          const hasVoted = option.voters && option.voters.includes(userId);
+          const percentage = option.percentage || 0;
+          const isWinning = percentage > 0 && percentage === Math.max(...post.options.map(o => o.percentage || 0));
           
           return `
-            <div class="poll-option cursor-pointer p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${hasVoted ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900' : ''}" 
+            <div class="poll-option cursor-pointer p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-sm" 
                  data-post-id="${post._id}" 
                  data-option="${index}" 
                  data-allow-multiple="${post.allowMultiple}">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-gray-900 dark:text-white font-medium">${escapeHtml(option.text)}</span>
-                <span class="text-sm text-gray-500 dark:text-gray-400 option-votes">${option.votes} vote${option.votes !== 1 ? 's' : ''}</span>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-gray-900 dark:text-white font-medium flex items-center text-xs">
+                  ${isWinning && percentage > 0 ? '<i class="fas fa-crown text-yellow-500 mr-1 text-xs" title="Leading option"></i>' : ''}
+                  ${escapeHtml(option.text)}
+                </span>
+                <div class="text-right">
+                  <span class="text-xs font-medium ${isWinning ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'} option-votes">${option.votes}</span>
+                </div>
               </div>
-              <div class="bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                <div class="bg-blue-500 h-2 rounded-full poll-results transition-all duration-1000" style="width: ${percentage}%"></div>
+              <div class="mb-1">
+                <div class="bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 overflow-hidden">
+                  <div class="poll-results h-1.5 rounded-full transition-all duration-1000 ease-out ${
+                    isWinning ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-blue-500'
+                  }" style="width: ${percentage}%"></div>
+                </div>
               </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${percentage}%</div>
+              <div class="flex justify-between items-center">
+                <div class="text-xs font-bold ${isWinning ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}">${percentage}%</div>
+                ${isWinning && percentage > 0 ? '<span class="text-xs text-yellow-600 dark:text-yellow-400 font-medium">🏆</span>' : ''}
+              </div>
             </div>
           `;
         }).join('')}
       </div>
-      <div class="text-sm text-gray-500 dark:text-gray-400">
-        Total votes: <span class="total-votes font-semibold">${post.totalVotes}</span>
-        ${post.allowMultiple ? ' • Multiple selections allowed' : ''}
+      
+      <!-- COMPACT FOOTER -->
+      <div class="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-blue-900/20 rounded-lg p-2 border border-gray-200 dark:border-blue-800">
+        <div class="flex items-center justify-between">
+          <span class="font-medium">Votes: <span class="total-votes text-blue-600 dark:text-blue-400">${post.totalVotes || 0}</span></span>
+          <div class="flex items-center space-x-2">
+            ${post.allowMultiple ? '<span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1 py-0.5 rounded">Multi</span>' : '<span class="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1 py-0.5 rounded">Single</span>'}
+            <span class="text-xs"><i class="fas fa-shield-alt mr-1"></i>1 vote/IP</span>
+          </div>
+        </div>
+        ${post.options.length > 4 ? '<div class="mt-1 text-xs text-gray-400 dark:text-gray-500"><i class="fas fa-arrows-alt-v mr-1"></i>Scroll for more options</div>' : ''}
       </div>
     </div>
   `;
 }
 
-// Fixed Poll Voting - Send votes to backend
+// UPDATED: Enhanced Poll Voting with One Vote per IP
 async function handlePollVote(event) {
   const option = event.currentTarget;
   const postId = option.dataset.postId;
   const optionIndex = parseInt(option.dataset.option);
+  const allowMultiple = option.dataset.allowMultiple === 'true';
   
   // Prevent multiple rapid clicks
   if (option.classList.contains('voting')) return;
   option.classList.add('voting');
   
   try {
+    let requestBody;
+    
+    if (allowMultiple) {
+      // For multiple selection polls, collect all selected options
+      const pollContainer = document.getElementById(`poll-${postId}`);
+      const allOptions = pollContainer.querySelectorAll('.poll-option');
+      let selectedOptions = [];
+      
+      // Check which options user wants to select
+      allOptions.forEach((opt, idx) => {
+        if (idx === optionIndex || opt.classList.contains('user-selected')) {
+          selectedOptions.push(idx);
+        }
+      });
+      
+      // Toggle current selection
+      if (selectedOptions.includes(optionIndex)) {
+        selectedOptions = selectedOptions.filter(idx => idx !== optionIndex);
+      } else {
+        selectedOptions.push(optionIndex);
+      }
+      
+      if (selectedOptions.length === 0) {
+        showAlert('Please select at least one option for multiple choice polls.', 'warning');
+        return;
+      }
+      
+      requestBody = {
+        optionIndexes: selectedOptions,
+        allowMultiple: true
+      };
+    } else {
+      // Single selection
+      requestBody = {
+        optionIndex: optionIndex,
+        allowMultiple: false
+      };
+    }
+
     const response = await fetch(`/api/posts/${postId}/vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ optionIndex })
+      body: JSON.stringify(requestBody)
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to vote');
-    }
 
     const data = await response.json();
     
-    // Update the specific poll with new data
-    updatePollUI(postId, data.post);
+    if (!response.ok) {
+      if (data.alreadyVoted) {
+        showAlert('You have already voted in this poll! Only one vote per person is allowed.', 'warning');
+        // Mark the poll as already voted
+        const pollContainer = document.getElementById(`poll-${postId}`);
+        if (pollContainer) {
+          pollContainer.parentElement.classList.add('opacity-75');
+          pollContainer.querySelectorAll('.poll-option').forEach(opt => {
+            opt.classList.remove('cursor-pointer');
+            opt.classList.add('cursor-not-allowed');
+            opt.style.pointerEvents = 'none';
+          });
+        }
+        return;
+      }
+      throw new Error(data.message || 'Failed to vote');
+    }
     
-    // Show success feedback
-    showVoteSuccess(option);
-    showAlert('Vote recorded successfully!', 'success');
+    // Update the poll UI with new data including percentages
+    updatePollUIWithPercentages(postId, data.post);
+    
+    // Disable further voting on this poll
+    const pollContainer = document.getElementById(`poll-${postId}`);
+    if (pollContainer) {
+      pollContainer.querySelectorAll('.poll-option').forEach(opt => {
+        opt.classList.remove('cursor-pointer');
+        opt.classList.add('cursor-not-allowed');
+        opt.style.pointerEvents = 'none';
+      });
+    }
+    
+    // Show success message with leading option info
+    if (data.leadingOptions && data.leadingOptions.length > 0) {
+      const leadingText = data.leadingOptions.length === 1 ? 
+        `"${data.leadingOptions[0].text}" is leading with ${data.leadingOptions.percentage}%!` :
+        `Multiple options tied at ${data.leadingOptions.percentage}%!`;
+      showAlert(`✅ Vote recorded! ${leadingText}`, 'success');
+    } else {
+      showAlert('✅ Vote recorded successfully!', 'success');
+    }
     
   } catch (error) {
     console.error('Vote error:', error);
-    showAlert(`Failed to vote: ${error.message}`, 'error');
+    showAlert(`❌ Failed to vote: ${error.message}`, 'error');
   } finally {
     option.classList.remove('voting');
   }
 }
 
-// Update poll UI with new vote data
-function updatePollUI(postId, pollData) {
+// UPDATED: Enhanced Poll UI Update with Percentages
+function updatePollUIWithPercentages(postId, pollData) {
   const pollContainer = document.getElementById(`poll-${postId}`);
   if (!pollContainer) return;
   
   const options = pollContainer.querySelectorAll('.poll-option');
   const totalVotesSpan = pollContainer.parentElement.querySelector('.total-votes');
-  const userId = getUserIdForVoting();
   
-  // Update vote counts and percentages
+  // Find the maximum percentage for highlighting winners
+  const maxPercentage = Math.max(...pollData.options.map(opt => opt.percentage || 0));
+  
+  // Update each option with new vote data
   pollData.options.forEach((optionData, index) => {
     const optionElement = options[index];
     if (!optionElement) return;
     
     const votesSpan = optionElement.querySelector('.option-votes');
     const progressBar = optionElement.querySelector('.poll-results');
-    const percentageDiv = optionElement.querySelector('.text-xs');
+    const percentageDiv = optionElement.querySelector('.text-sm');
     
-    // Calculate percentage
-    const percentage = pollData.totalVotes > 0 ? 
-      Math.round((optionData.votes / pollData.totalVotes) * 100) : 0;
+    const percentage = optionData.percentage || 0;
+    const isWinning = percentage > 0 && percentage === maxPercentage;
     
     // Update vote count
-    votesSpan.textContent = `${optionData.votes} vote${optionData.votes !== 1 ? 's' : ''}`;
+    if (votesSpan) {
+      votesSpan.textContent = `${optionData.votes} vote${optionData.votes !== 1 ? 's' : ''}`;
+      votesSpan.className = `text-sm font-semibold option-votes ${isWinning ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`;
+    }
     
-    // Update progress bar
-    progressBar.style.width = `${percentage}%`;
+    // Update progress bar with animation
+    if (progressBar) {
+      progressBar.style.width = `${percentage}%`;
+      progressBar.className = `poll-results h-3 rounded-full transition-all duration-1000 ease-out ${
+        isWinning ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-blue-500'
+      }`;
+    }
     
-    // Update percentage text
-    percentageDiv.textContent = `${percentage}%`;
+    // Update percentage display
+    if (percentageDiv) {
+      percentageDiv.innerHTML = `
+        <div class="flex justify-between items-center">
+          <div class="text-sm font-bold ${isWinning ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}">${percentage}%</div>
+          ${isWinning && percentage > 0 ? '<span class="text-xs text-yellow-600 dark:text-yellow-400 font-semibold">🏆 LEADING</span>' : ''}
+        </div>
+      `;
+    }
     
-    // Highlight user's selection
-    if (optionData.voters && optionData.voters.includes(userId)) {
-      optionElement.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-900');
-    } else {
-      optionElement.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-900');
+    // Add crown icon for leading options
+    const optionText = optionElement.querySelector('span');
+    if (optionText && isWinning && percentage > 0) {
+      if (!optionText.querySelector('.fa-crown')) {
+        optionText.innerHTML = '<i class="fas fa-crown text-yellow-500 mr-2" title="Leading option"></i>' + optionText.innerHTML;
+      }
     }
   });
   
   // Update total votes
   if (totalVotesSpan) {
-    totalVotesSpan.textContent = pollData.totalVotes;
+    totalVotesSpan.textContent = pollData.totalVotes || 0;
   }
 }
 
-// Show visual feedback for successful vote
-function showVoteSuccess(optionElement) {
-  const originalClasses = optionElement.className;
-  optionElement.classList.add('bg-green-100', 'dark:bg-green-900', 'border-green-500');
-  
-  setTimeout(() => {
-    optionElement.className = originalClasses;
-  }, 1000);
-}
-
-// Like functionality
+// Like functionality (unchanged)
 async function handleLike(event) {
   const button = event.currentTarget;
   const postId = button.getAttribute("data-post-id");
@@ -768,7 +863,7 @@ function openImageModal(imageUrl) {
   window.open(imageUrl, '_blank');
 }
 
-// BOTTOM ALERT SYSTEM ONLY - No Top Notifications
+// Enhanced Alert System with Icons
 function showAlert(message, type = 'info') {
   // Remove existing alerts
   const existingAlerts = document.querySelectorAll('.alert-message');
@@ -782,14 +877,16 @@ function showAlert(message, type = 'info') {
     'bg-blue-500 text-white'
   }`;
   
+  const icons = {
+    success: 'fa-check-circle',
+    error: 'fa-times-circle',
+    warning: 'fa-exclamation-triangle',
+    info: 'fa-info-circle'
+  };
+  
   alert.innerHTML = `
     <div class="flex items-center space-x-2">
-      <i class="fas ${
-        type === 'success' ? 'fa-check-circle' :
-        type === 'error' ? 'fa-times-circle' :
-        type === 'warning' ? 'fa-exclamation-triangle' :
-        'fa-info-circle'
-      }"></i>
+      <i class="fas ${icons[type] || icons.info}"></i>
       <span class="font-medium">${message}</span>
     </div>
   `;
@@ -798,7 +895,7 @@ function showAlert(message, type = 'info') {
   
   setTimeout(() => {
     alert.remove();
-  }, 4000);
+  }, 5000);
 }
 
 // Utility Functions
@@ -847,46 +944,82 @@ function removeImage() {
   document.getElementById('imagePreview').innerHTML = '';
 }
 
-// Add Read More functionality for long captions
+// Read More functionality positioned at end of second line
 function addReadMore(containerSelector, maxLines = 2) {
   const elements = document.querySelectorAll(containerSelector);
   elements.forEach(el => {
+    // Skip if already processed
+    if (el.getAttribute('data-read-more-processed')) return;
+    
     const lineHeight = parseFloat(getComputedStyle(el).lineHeight);
     const maxHeight = lineHeight * maxLines;
     
     if (el.scrollHeight > maxHeight) {
-      el.style.maxHeight = maxHeight + 'px';
-      el.style.overflow = 'hidden';
-      el.style.position = 'relative';
-
-      const readMoreBtn = document.createElement('button');
-      readMoreBtn.textContent = 'Read More';
-      readMoreBtn.className = 'text-blue-600 dark:text-blue-400 font-semibold mt-1 hover:text-blue-700 dark:hover:text-blue-300 transition-colors';
-      readMoreBtn.style.background = 'none';
-      readMoreBtn.style.border = 'none';
-      readMoreBtn.style.cursor = 'pointer';
-      readMoreBtn.style.padding = '0';
-
-      readMoreBtn.onclick = () => {
-        if (readMoreBtn.textContent === 'Read More') {
-          el.style.maxHeight = 'none';
-          el.style.overflow = 'visible';
-          readMoreBtn.textContent = 'Read Less';
-        } else {
-          el.style.maxHeight = maxHeight + 'px';
-          el.style.overflow = 'hidden';
-          readMoreBtn.textContent = 'Read More';
-        }
-      };
-
-      el.after(readMoreBtn);
+      // Store original content
+      const originalContent = el.innerHTML;
+      const originalText = el.textContent;
+      
+      // Calculate approximate character position for 2 lines
+      const approxCharsPerLine = Math.floor(el.offsetWidth / 8); // Rough estimate
+      const twoLinesChars = approxCharsPerLine * 2;
+      
+      let truncatedText = originalText.substring(0, twoLinesChars);
+      
+      // Find last space to avoid cutting words
+      const lastSpaceIndex = truncatedText.lastIndexOf(' ');
+      if (lastSpaceIndex > twoLinesChars * 0.8) {
+        truncatedText = truncatedText.substring(0, lastSpaceIndex);
+      }
+      
+      // Create truncated version with inline Read More button
+      const truncatedHTML = `${escapeHtml(truncatedText)}... <button class="read-more-btn text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer bg-transparent border-none p-0">Read More</button>`;
+      
+      // Set initial state
+      el.innerHTML = truncatedHTML;
+      el.setAttribute('data-read-more-processed', 'true');
+      el.setAttribute('data-original-content', originalContent);
+      el.setAttribute('data-expanded', 'false');
+      
+      // Add click event listener
+      const readMoreBtn = el.querySelector('.read-more-btn');
+      if (readMoreBtn) {
+        readMoreBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const isExpanded = el.getAttribute('data-expanded') === 'true';
+          
+          if (isExpanded) {
+            // Collapse
+            el.innerHTML = truncatedHTML;
+            el.setAttribute('data-expanded', 'false');
+            
+            // Re-attach event listener
+            const newReadMoreBtn = el.querySelector('.read-more-btn');
+            if (newReadMoreBtn) {
+              newReadMoreBtn.addEventListener('click', arguments.callee);
+            }
+          } else {
+            // Expand
+            const expandedHTML = `${originalContent} <button class="read-less-btn text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer bg-transparent border-none p-0">Read Less</button>`;
+            el.innerHTML = expandedHTML;
+            el.setAttribute('data-expanded', 'true');
+            
+            // Re-attach event listener for Read Less
+            const readLessBtn = el.querySelector('.read-less-btn');
+            if (readLessBtn) {
+              readLessBtn.addEventListener('click', arguments.callee);
+            }
+          }
+        });
+      }
     }
   });
 }
 
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 UniSphere initialized');
+  console.log('🚀 UniSphere initialized with one-vote-per-IP polls');
   
   // Initialize all components
   initTheme();
@@ -1049,5 +1182,5 @@ document.addEventListener('DOMContentLoaded', function() {
   // Auto-refresh posts every 30 seconds
   setInterval(fetchPosts, 30000);
   
-  console.log('✅ UniSphere fully initialized with all features');
+  console.log('✅ UniSphere fully initialized with enhanced poll system');
 });
