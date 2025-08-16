@@ -406,50 +406,268 @@ app.post('/api/posts/:postId/like', async (req, res) => {
   }
 });
 
-// Vote on poll
+// Add to your server.js - Enhanced debugging for production
 app.post('/api/posts/:postId/vote', async (req, res) => {
+  const startTime = Date.now();
+  console.log('🗳️ PRODUCTION Vote request:', {
+    postId: req.params.postId,
+    body: req.body,
+    ip: getClientIP(req),
+    environment: process.env.NODE_ENV,
+    dbState: mongoose.connection.readyState,
+    timestamp: new Date().toISOString()
+  });
+  
   try {
     const { postId } = req.params;
-    const { optionIndex } = req.body;
-    const userId = req.body.userId || req.ip;
-    
-    const post = await Post.findById(postId);
-    if (!post || post.type !== 'poll') {
-      return res.status(404).json({ message: 'Poll not found' });
-    }
-    
-    if (optionIndex < 0 || optionIndex >= post.options.length) {
-      return res.status(400).json({ message: 'Invalid option' });
-    }
-    
-    const option = post.options[optionIndex];
-    const hasVoted = option.voters.includes(userId);
-    
-    if (!post.allowMultiple) {
-      // Remove user's previous votes if single selection
-      post.options.forEach(opt => {
-        if (opt.voters.includes(userId)) {
-          opt.votes = Math.max(0, opt.votes - 1);
-          opt.voters = opt.voters.filter(id => id !== userId);
-          post.totalVotes = Math.max(0, post.totalVotes - 1);
-        }
+    const { optionIndex, optionIndexes, allowMultiple } = req.body;
+    const ip = getClientIP(req);
+
+    // Enhanced MongoDB connection check
+    if (mongoose.connection.readyState !== 1) {
+      console.error('❌ Database not connected, state:', mongoose.connection.readyState);
+      return res.status(500).json({ 
+        message: 'Database connection error',
+        dbState: mongoose.connection.readyState 
       });
     }
+
+    // Validate postId format
+    if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
+      console.log('❌ Invalid postId format:', postId);
+      return res.status(400).json({ 
+        message: 'Invalid post ID format',
+        postId: postId 
+      });
+    }
+
+    // Find the post with timeout
+    console.log('🔍 Looking for post:', postId);
+    const post = await Post.findById(postId).maxTimeMS(10000); // 10 second timeout
     
-    if (!hasVoted) {
-      option.votes += 1;
-      option.voters.push(userId);
-      post.totalVotes += 1;
+    if (!post) {
+      console.log('❌ Post not found in database');
+      return res.status(404).json({ message: 'Poll not found' });
+    }
+
+    console.log('✅ Post found:', {
+      id: post._id,
+      type: post.type,
+      question: post.question?.substring(0, 50),
+      optionsCount: post.options?.length,
+      currentVotes: post.options.map(opt => opt.votes),
+      voterIPs: post.voterIPs?.length || 0
+    });
+
+    if (post.type !== 'poll') {
+      console.log('❌ Post is not a poll, type:', post.type);
+      return res.status(400).json({ message: 'Post is not a poll' });
+    }
+
+    // Check if IP already voted
+    if (post.voterIPs && post.voterIPs.includes(ip)) {
+      console.log('❌ IP already voted:', ip);
+      return res.status(400).json({ 
+        message: 'You have already voted in this poll. Only one vote per person is allowed.',
+        alreadyVoted: true
+      });
+    }
+
+    // Initialize arrays safely
+    if (!post.voterIPs) post.voterIPs = [];
+    if (!post.options || !Array.isArray(post.options)) {
+      console.log('❌ Invalid options array');
+      return res.status(500).json({ message: 'Poll options are corrupted' });
     }
     
-    await post.save();
-    res.json({ 
-      message: 'Vote recorded successfully', 
-      post 
+    // Ensure all options have required fields
+    post.options.forEach((option, index) => {
+      if (!option.voters || !Array.isArray(option.voters)) {
+        post.options[index].voters = [];
+      }
+      if (typeof option.votes !== 'number' || isNaN(option.votes)) {
+        post.options[index].votes = 0;
+      }
     });
+
+    console.log('📊 Processing vote...');
+
+    // Process vote based on type
+    if (allowMultiple) {
+      // Multiple choice validation
+      if (!Array.isArray(optionIndexes)) {
+        return res.status(400).json({ message: 'Invalid request format for multiple choice' });
+      }
+      
+      if (optionIndexes.length === 0) {
+        return res.status(400).json({ message: 'Please select at least one option' });
+      }
+
+      if (optionIndexes.length !== 2) {
+        return res.status(400).json({ message: 'Please select exactly 2 options for multiple choice polls' });
+      }
+
+      // Validate all indexes
+      const invalidIndex = optionIndexes.find(idx => 
+        typeof idx !== 'number' || idx < 0 || idx >= post.options.length
+      );
+      
+      if (invalidIndex !== undefined) {
+        return res.status(400).json({ 
+          message: `Invalid option index: ${invalidIndex}`,
+          validRange: `0-${post.options.length - 1}`
+        });
+      }
+
+      // Check for duplicate selections
+      const uniqueIndexes = [...new Set(optionIndexes)];
+      if (uniqueIndexes.length !== optionIndexes.length) {
+        return res.status(400).json({ message: 'Cannot select the same option multiple times' });
+      }
+
+      // Add votes
+      optionIndexes.forEach(idx => {
+        post.options[idx].votes += 1;
+        post.options[idx].voters.push(ip);
+        console.log(`✅ Added vote to option ${idx}: "${post.options[idx].text}" (now ${post.options[idx].votes} votes)`);
+      });
+
+    } else {
+      // Single choice validation
+      let selectedIndex;
+      
+      if (optionIndex !== undefined) {
+        selectedIndex = optionIndex;
+      } else if (Array.isArray(optionIndexes) && optionIndexes.length === 1) {
+        selectedIndex = optionIndexes[0];
+      } else {
+        return res.status(400).json({ message: 'Invalid request format for single choice' });
+      }
+      
+      if (typeof selectedIndex !== 'number' || selectedIndex < 0 || selectedIndex >= post.options.length) {
+        return res.status(400).json({ 
+          message: 'Invalid option selected',
+          selectedIndex,
+          validRange: `0-${post.options.length - 1}`
+        });
+      }
+
+      post.options[selectedIndex].votes += 1;
+      post.options[selectedIndex].voters.push(ip);
+      console.log(`✅ Added vote to option ${selectedIndex}: "${post.options[selectedIndex].text}" (now ${post.options[selectedIndex].votes} votes)`);
+    }
+
+    // Add IP to voters list
+    post.voterIPs.push(ip);
+    
+    // Calculate totals
+    const totalVoteCount = post.options.reduce((sum, opt) => sum + (opt.votes || 0), 0);
+    post.totalVotes = totalVoteCount;
+
+    console.log('💾 Saving to database...', {
+      totalVotes: totalVoteCount,
+      uniqueVoters: post.voterIPs.length,
+      optionVotes: post.options.map(opt => ({ text: opt.text, votes: opt.votes }))
+    });
+    
+    // Enhanced save with retries and error handling
+    let savedPost;
+    const maxRetries = 3;
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+      try {
+        // Mark modified for nested objects
+        post.markModified('options');
+        post.markModified('voterIPs');
+        
+        savedPost = await post.save({ 
+          validateBeforeSave: true,
+          timestamps: true 
+        });
+        
+        console.log('✅ Post saved successfully on attempt', retryCount + 1);
+        break;
+      } catch (saveError) {
+        retryCount++;
+        console.warn(`⚠️ Save attempt ${retryCount} failed:`, {
+          error: saveError.message,
+          name: saveError.name,
+          code: saveError.code
+        });
+        
+        if (retryCount >= maxRetries) {
+          console.error('❌ All save attempts failed:', saveError);
+          throw new Error(`Database save failed after ${maxRetries} attempts: ${saveError.message}`);
+        }
+        
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 100));
+      }
+    }
+
+    // Calculate percentages for response
+    const optionsWithPercentages = savedPost.options.map(option => ({
+      text: option.text,
+      votes: option.votes || 0,
+      voters: option.voters || [],
+      percentage: totalVoteCount > 0 ? Math.round((option.votes / totalVoteCount) * 100) : 0
+    }));
+
+    // Find leading options
+    const maxPercentage = Math.max(...optionsWithPercentages.map(opt => opt.percentage));
+    const leadingOptions = optionsWithPercentages.filter(opt => 
+      opt.percentage === maxPercentage && opt.percentage > 0
+    );
+
+    const responsePost = {
+      ...savedPost.toObject(),
+      options: optionsWithPercentages,
+      totalVotes: totalVoteCount
+    };
+
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ Vote processed successfully in ${processingTime}ms`);
+
+    res.json({
+      message: 'Vote recorded successfully!',
+      post: responsePost,
+      leadingOptions: leadingOptions.map(opt => ({ 
+        text: opt.text, 
+        percentage: opt.percentage 
+      })),
+      totalUniqueVoters: savedPost.voterIPs.length,
+      totalVotes: totalVoteCount,
+      processingTime: processingTime
+    });
+
   } catch (error) {
-    console.error('Vote error:', error);
-    res.status(500).json({ message: 'Failed to record vote' });
+    const processingTime = Date.now() - startTime;
+    console.error('❌ CRITICAL VOTE ERROR:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+      postId: req.params.postId,
+      body: req.body,
+      ip: getClientIP(req),
+      processingTime: processingTime,
+      dbState: mongoose.connection.readyState,
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    });
+
+    res.status(500).json({
+      message: 'Failed to record vote',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? {
+        stack: error.stack,
+        postId: req.params.postId,
+        body: req.body,
+        processingTime: processingTime,
+        dbState: mongoose.connection.readyState
+      } : undefined
+    });
   }
 });
 
