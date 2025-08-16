@@ -128,14 +128,15 @@ const postSchema = new mongoose.Schema({
   }]
 });
 
+
 const bannerSchema = new mongoose.Schema({
   imageUrl: String,
-  linkUrl: String,  // Added linkUrl field
   updatedAt: { type: Date, default: Date.now }
 });
 
 const backgroundSchema = new mongoose.Schema({
   imageUrl: String,
+
   updatedAt: { type: Date, default: Date.now }
 });
 
@@ -195,103 +196,66 @@ async function moderateAllContent(req, res, next) {
 
 // Routes
 
-// FIXED: Use upload.fields() instead of upload.single()
+
+// Routes
+
+// Upload banner image with link URL
 app.post('/api/upload/banner', upload.fields([
   { name: 'banner', maxCount: 1 },
   { name: 'link', maxCount: 1 }
 ]), async (req, res) => {
+  console.log('📥 Files received:', req.files);
+  console.log('📝 Body received:', req.body);
   
-  // Debug logs to see what's received
-  console.log('🔍 Files received:', req.files);
-  console.log('🔍 Body received:', req.body);
-  console.log('🔍 Body keys:', Object.keys(req.body));
-  
-  // Extract data properly
+  // Extract file and link
   const bannerFile = req.files && req.files['banner'] ? req.files['banner'][0] : null;
   const linkUrl = req.body.link;
 
-  console.log('📝 Extracted data:', {
-    hasFile: !!bannerFile,
-    linkUrl: linkUrl,
-    linkType: typeof linkUrl
-  });
-
   // Validation
-  if (!bannerFile) {
-    console.log('❌ No banner file found');
-    return res.status(400).json({ message: 'No banner image uploaded' });
-  }
-  
-  if (!linkUrl || linkUrl.trim() === '') {
-    console.log('❌ No link URL found');
-    return res.status(400).json({ message: 'Banner link URL is required' });
-  }
+  if (!bannerFile) return res.status(400).json({ message: 'No banner image uploaded' });
+  if (!linkUrl) return res.status(400).json({ message: 'Banner link URL is required' });
 
   try {
-    // 1. Moderation check
-    const unsafe = await isImageUnsafe(bannerFile.buffer, bannerFile.mimetype);
-    if (unsafe) {
-      return res.status(400).json({ message: 'Banner image contains inappropriate content' });
-    }
-
-    // 2. Upload to Cloudinary
-    const dataUri = `data:${bannerFile.mimetype};base64,${bannerFile.buffer.toString('base64')}`;
-    const { secure_url } = await cloudinary.uploader.upload(dataUri, {
+    // Convert to base64 and upload to Cloudinary
+    const b64 = Buffer.from(bannerFile.buffer).toString("base64");
+    const dataUri = `data:${bannerFile.mimetype};base64,${b64}`;
+    const result = await cloudinary.uploader.upload(dataUri, {
       folder: 'banner',
       resource_type: 'image'
     });
 
-    console.log('☁️ Cloudinary upload successful:', secure_url);
-
-    // 3. Save to database with BOTH imageUrl and linkUrl
-    const bannerDoc = await Banner.findOneAndUpdate(
-      {}, // Empty filter = find any document
-      {
-        imageUrl: secure_url,
-        linkUrl: linkUrl.trim(),
-        updatedAt: new Date()
-      },
-      { 
-        upsert: true,  // Create if doesn't exist
-        new: true,     // Return updated document
-        runValidators: true
-      }
-    );
-
-    console.log('💾 Banner saved to database:', {
-      id: bannerDoc._id,
-      imageUrl: bannerDoc.imageUrl,
-      linkUrl: bannerDoc.linkUrl,
-      updatedAt: bannerDoc.updatedAt
-    });
-
-    return res.json({ 
-      message: 'Banner uploaded successfully', 
-      imageUrl: secure_url, 
+    // Save to database with both image and link
+    const bannerDoc = await Banner.findOneAndUpdate({}, {
+      imageUrl: result.secure_url,
       linkUrl: linkUrl.trim(),
-      success: true
-    });
+      updatedAt: new Date()
+    }, { upsert: true, new: true });
 
-  } catch (err) {
-    console.error('❌ Banner upload error:', err);
-    return res.status(500).json({ message: 'Banner upload failed: ' + err.message });
+    console.log('✅ Banner saved to database:', bannerDoc);
+
+    res.json({ 
+      message: 'Banner uploaded successfully', 
+      imageUrl: result.secure_url, 
+      linkUrl: linkUrl.trim() 
+    });
+  } catch (error) {
+    console.error("Banner upload error:", error);
+    res.status(500).json({ message: 'Banner upload failed' });
   }
 });
 
-
-// Debug route to check database contents
-app.get('/api/debug/banner', async (req, res) => {
+// Get banner with link URL
+app.get('/api/banner', async (req, res) => {
   try {
     const banner = await Banner.findOne();
+    console.log('📋 Banner from database:', banner);
     res.json({
-      exists: !!banner,
-      data: banner,
-      imageUrl: banner?.imageUrl || null,
-      linkUrl: banner?.linkUrl || null,
-      updatedAt: banner?.updatedAt || null
+      imageUrl: banner ? banner.imageUrl : null,
+      linkUrl: banner ? banner.linkUrl : null
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    console.error("Banner fetch error:", error);
+    res.status(500).json({ message: 'Failed to fetch banner' });
   }
 });
 
