@@ -1336,3 +1336,76 @@ document.addEventListener('DOMContentLoaded', function() {
   
   console.log('✅ UniSphere fully initialized with proper single/multiple choice voting');
 });
+// Replace the notification system in your script section with this:
+class SimpleNotificationSystem {
+  constructor() {
+    this.isEnabled = false;
+    this.appName = "UniSphere"; // App name for notifications
+    this.init();
+  }
+
+  async init() {
+    if ("Notification" in window && Notification.permission === "default") {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        this.isEnabled = true;
+        console.log("✅ UniSphere notifications enabled");
+      }
+    } else if (Notification.permission === "granted") {
+      this.isEnabled = true;
+      console.log("✅ UniSphere notifications already enabled");
+    }
+  }
+
+  send(title, message, options = {}) {
+    if (!this.isEnabled || Notification.permission !== 'granted') {
+      console.log("❌ UniSphere notifications not enabled");
+      this.showAlert(`${this.appName}: ${title} - ${message}`);
+      return;
+    }
+
+    // Add app name to notification
+    const appTitle = `${this.appName} - ${title}`;
+
+    const notification = new Notification(appTitle, {
+      body: message,
+      icon: options.icon || '/favicon.ico',
+      badge: '/icon-192x192.png',
+      tag: options.tag || 'unisphere-notification',
+      vibrate: options.vibrate || [200, 100, 200],
+      requireInteraction: options.requireInteraction || false,
+      silent: options.silent || false
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
+
+    setTimeout(() => notification.close(), options.duration || 5000);
+    console.log(`📱 UniSphere notification sent: ${appTitle} - ${message}`);
+    return notification;
+  }
+
+  showAlert(message) {
+    const alertContainer = document.getElementById('alertContainer');
+    if (!alertContainer) return;
+
+    const alert = document.createElement('div');
+    alert.className = 'bg-blue-500 text-white p-3 rounded-lg shadow-lg animate-slide-up';
+    alert.innerHTML = `
+      <div class="flex items-center">
+        <i class="fas fa-rocket mr-2"></i>
+        <span class="text-sm font-semibold">${message}</span>
+        <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    `;
+
+    alertContainer.appendChild(alert);
+    setTimeout(() => {
+      if (alert.parentElement) alert.remove();
+    }, 4000);
+  }
+}
