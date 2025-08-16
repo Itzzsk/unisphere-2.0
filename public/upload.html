@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>UniSphere Admin Banner</title>
+  <title>UniSphere Admin Panel</title>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -12,9 +12,37 @@
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: { press: ['"Press Start 2P"', 'cursive'] },
-          colors: { nightTop: '#0F172A', nightBottom: '#1E293B' },
-          boxShadow: { 'inner-glow':'inset 0 0 6px 0 rgba(0,0,0,.35)' }
+          fontFamily: { 
+            press: ['"Press Start 2P"', 'cursive'],
+            poppins: ["Poppins", "sans-serif"]
+          },
+          colors: { 
+            nightTop: '#0F172A', 
+            nightBottom: '#1E293B' 
+          },
+          boxShadow: { 'inner-glow':'inset 0 0 6px 0 rgba(0,0,0,.35)' },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-in-out',
+            'slide-up': 'slideUp 0.3s ease-out',
+            'bounce-in': 'bounceIn 0.5s ease-out',
+            'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(10px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+            bounceIn: {
+              '0%': { transform: 'scale(0.3)', opacity: '0' },
+              '50%': { transform: 'scale(1.05)' },
+              '70%': { transform: 'scale(0.9)' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            },
+          },
         }
       }
     };
@@ -24,63 +52,322 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-  <!-- Icons & font -->
+  <!-- Icons & fonts -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     html,body{height:100%}
     body{background:linear-gradient(135deg,#e9f0ff 0%,#dbeafe 40%,#bfdbfe 100%);}
     body.dark{background:linear-gradient(135deg,var(--tw-color-nightTop),var(--tw-color-nightBottom));}
+    
+    .status-indicator {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    .notification-sent {
+      animation: bounceIn 0.5s ease-out;
+    }
   </style>
 </head>
 
-<body class="min-h-full flex items-center justify-center text-slate-900 dark:text-slate-100 transition-colors duration-300">
+<body class="min-h-full font-poppins text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
 <!-- LOGIN CARD -->
-<section id="loginSection" class="w-full max-w-sm p-8 space-y-4 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur shadow-xl shadow-inner-glow">
+<section id="loginSection" class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-sm p-8 space-y-4 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur shadow-xl shadow-inner-glow">
+    <h1 class="font-press text-xs tracking-widest flex items-center justify-center gap-2">
+      <i class="fa-solid fa-user-astronaut text-blue-500 text-lg"></i>UniSphere
+    </h1>
 
-  <h1 class="font-press text-xs tracking-widest flex items-center justify-center gap-2">
-    <i class="fa-solid fa-user-astronaut text-blue-500 text-lg"></i>UniSphere
-  </h1>
+    <h2 class="text-xl font-bold text-center">Admin Login</h2>
 
-  <h2 class="text-xl font-bold text-center">Admin Login</h2>
+    <input id="email" type="email" placeholder="Email" class="w-full px-4 py-3 rounded-lg bg-white/80 dark:bg-slate-700/70 border focus:ring-2 focus:ring-blue-500 outline-none"/>
 
-  <input id="email" type="email" placeholder="Email" class="w-full px-4 py-3 rounded-lg bg-white/80 dark:bg-slate-700/70 border focus:ring-2 focus:ring-blue-500 outline-none"/>
+    <input id="password" type="password" placeholder="Password" class="w-full px-4 py-3 rounded-lg bg-white/80 dark:bg-slate-700/70 border focus:ring-2 focus:ring-blue-500 outline-none"/>
 
-  <input id="password" type="password" placeholder="Password" class="w-full px-4 py-3 rounded-lg bg-white/80 dark:bg-slate-700/70 border focus:ring-2 focus:ring-blue-500 outline-none"/>
+    <button id="loginBtn" onclick="login()" class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">Login</button>
 
-  <button id="loginBtn" onclick="login()" class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">Login</button>
-
-  <p id="loginError" class="hidden text-sm text-center text-red-400"></p>
-</section>
-
-<!-- BANNER UPLOAD CARD -->
-<section id="uploadSection" class="hidden w-full max-w-md p-8 space-y-8 rounded-2xl bg-white/70 dark:bg-slate-800/70 backdrop-blur shadow-xl shadow-inner-glow">
-
-  <div class="flex items-center justify-between">
-    <h2 class="text-xl font-bold">Admin Panel</h2>
-    <button onclick="logout()" class="px-4 py-2 text-sm rounded-lg bg-red-500 hover:bg-red-600 text-white">Logout</button>
-  </div>
-
-  <div>
-    <h3 class="text-lg font-bold text-center mb-6">Upload Banner</h3>
-
-    <form id="uploadBannerForm" class="space-y-3">
-      <!-- Image Upload -->
-      <input id="bannerImage" type="file" accept="image/*" class="w-full rounded-lg bg-white/80 dark:bg-slate-700/70 border p-3" required>
-
-      <!-- URL Input -->
-      <input id="bannerLink" type="url" placeholder="Enter URL (e.g., google.com)" class="w-full rounded-lg bg-white/80 dark:bg-slate-700/70 border p-3" required>
-
-      <!-- Submit Button -->
-      <button type="submit" class="w-full py-3 rounded-lg bg-lime-400 hover:bg-lime-500 text-slate-900 font-semibold transition-colors">Update Banner</button>
-    </form>
-
-    <!-- Image Preview -->
-    <div id="bannerPreview" class="mt-4"></div>
+    <p id="loginError" class="hidden text-sm text-center text-red-400"></p>
   </div>
 </section>
+
+<!-- MAIN ADMIN PANEL -->
+<section id="adminSection" class="hidden min-h-screen">
+  <!-- Header -->
+  <header class="bg-white/70 dark:bg-slate-800/70 backdrop-blur shadow-lg border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Brand -->
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-user-astronaut text-blue-500 text-2xl"></i>
+            <h1 class="font-press text-lg font-bold text-gray-900 dark:text-white">UniSphere</h1>
+          </div>
+          <div class="hidden sm:block">
+            <span class="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 px-3 py-1 rounded-full text-sm font-medium">
+              Admin Panel
+            </span>
+          </div>
+        </div>
+        
+        <!-- Status & Controls -->
+        <div class="flex items-center space-x-4">
+          <div id="notificationStatus" class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-gray-400 rounded-full status-indicator"></div>
+            <span class="text-sm text-gray-600 dark:text-gray-400">Checking permissions...</span>
+          </div>
+          
+          <!-- Theme Toggle -->
+          <button id="themeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+            <i class="fas fa-moon dark:hidden"></i>
+            <i class="fas fa-sun hidden dark:block"></i>
+          </button>
+          
+          <!-- Logout -->
+          <button onclick="logout()" class="px-4 py-2 text-sm rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium">
+            <i class="fas fa-sign-out-alt mr-1"></i>
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Tab Navigation -->
+    <div class="mb-8">
+      <div class="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg max-w-md mx-auto" role="tablist">
+        <button id="notificationTab" onclick="switchTab('notifications')" 
+                class="flex-1 px-6 py-3 rounded-lg font-semibold bg-blue-500 text-white shadow-md -translate-y-0.5"
+                role="tab" aria-selected="true">
+          <i class="fas fa-bell mr-2"></i>Notifications
+        </button>
+        <button id="bannerTab" onclick="switchTab('banner')" 
+                class="flex-1 px-6 py-3 rounded-lg font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500"
+                role="tab" aria-selected="false">
+          <i class="fas fa-image mr-2"></i>Banner
+        </button>
+      </div>
+    </div>
+
+    <!-- Notifications Panel -->
+    <div id="notificationsPanel" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Notification Sender Panel -->
+      <div class="lg:col-span-2">
+        <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+              <i class="fas fa-paper-plane mr-3 text-blue-500"></i>
+              Send Notification
+            </h2>
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              <i class="fas fa-users mr-1"></i>
+              <span id="activeUsers">All UniSphere Users</span>
+            </div>
+          </div>
+          
+          <!-- Notification Form -->
+          <form id="notificationForm" class="space-y-6">
+            <!-- Title Input -->
+            <div>
+              <label for="notificationTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Notification Title
+              </label>
+              <input type="text" 
+                     id="notificationTitle" 
+                     name="title"
+                     placeholder="Enter notification title..."
+                     maxlength="50"
+                     class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white/80 dark:bg-slate-700/70 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                     required>
+              <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <span id="titleCount">0</span>/50 characters
+              </div>
+            </div>
+            
+            <!-- Message Input -->
+            <div>
+              <label for="notificationMessage" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Notification Message
+              </label>
+              <textarea id="notificationMessage" 
+                        name="message"
+                        rows="4"
+                        placeholder="Enter your message content..."
+                        maxlength="200"
+                        class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white/80 dark:bg-slate-700/70 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none"
+                        required></textarea>
+              <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <span id="messageCount">0</span>/200 characters
+              </div>
+            </div>
+            
+            <!-- Advanced Options -->
+            <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                <i class="fas fa-cog mr-2 text-gray-500"></i>
+                Advanced Options
+              </h3>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Require Interaction -->
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="requireInteraction" class="rounded text-blue-600 focus:ring-blue-500 mr-3">
+                  <div>
+                    <div class="text-sm font-medium text-gray-700 dark:text-gray-300">Require Interaction</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">User must click to dismiss</div>
+                  </div>
+                </label>
+                
+                <!-- Silent Notification -->
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="silentMode" class="rounded text-blue-600 focus:ring-blue-500 mr-3">
+                  <div>
+                    <div class="text-sm font-medium text-gray-700 dark:text-gray-300">Silent Mode</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">No sound or vibration</div>
+                  </div>
+                </label>
+              </div>
+              
+              <!-- Duration -->
+              <div class="mt-4">
+                <label for="duration" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Auto-dismiss after (seconds)
+                </label>
+                <select id="duration" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white/80 dark:bg-slate-700/70 text-gray-900 dark:text-white">
+                  <option value="5000">5 seconds</option>
+                  <option value="10000">10 seconds</option>
+                  <option value="15000">15 seconds</option>
+                  <option value="30000">30 seconds</option>
+                  <option value="0">Never (manual dismiss only)</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Send Button -->
+            <div class="flex justify-end space-x-4">
+              <button type="button" 
+                      id="previewBtn"
+                      class="px-6 py-3 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors duration-300 flex items-center">
+                <i class="fas fa-eye mr-2"></i>
+                Preview
+              </button>
+              
+              <button type="submit" 
+                      id="sendNotificationBtn"
+                      class="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-rocket mr-2"></i>
+                <span class="send-text">Send Notification</span>
+                <i class="fas fa-spinner fa-spin ml-2 hidden loading-spinner"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Stats & History Panel -->
+      <div class="space-y-6">
+        <!-- Quick Stats -->
+        <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+            <i class="fas fa-chart-bar mr-2 text-green-500"></i>
+            Quick Stats
+          </h3>
+          
+          <div class="space-y-4">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Sent Today</span>
+              <span id="sentToday" class="text-lg font-bold text-blue-600 dark:text-blue-400">0</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Total Sent</span>
+              <span id="totalSent" class="text-lg font-bold text-green-600 dark:text-green-400">0</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Last Sent</span>
+              <span id="lastSent" class="text-sm text-gray-500 dark:text-gray-400">Never</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recent Notifications -->
+        <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+              <i class="fas fa-history mr-2 text-purple-500"></i>
+              Recent Notifications
+            </h3>
+            <button id="clearHistory" class="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+              Clear All
+            </button>
+          </div>
+          
+          <div id="notificationHistory" class="space-y-3 max-h-96 overflow-y-auto">
+            <!-- History items will be inserted here -->
+            <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+              <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
+              <p>No notifications sent yet</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Banner Panel -->
+    <div id="bannerPanel" class="hidden">
+      <div class="max-w-md mx-auto">
+        <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 space-y-8">
+          <h2 class="text-2xl font-bold text-center flex items-center justify-center">
+            <i class="fas fa-image mr-3 text-green-500"></i>
+            Upload Banner
+          </h2>
+
+          <form id="uploadBannerForm" class="space-y-4">
+            <!-- Image Upload -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner Image</label>
+              <input id="bannerImage" type="file" accept="image/*" class="w-full rounded-lg bg-white/80 dark:bg-slate-700/70 border p-3" required>
+            </div>
+
+            <!-- URL Input -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner Link URL</label>
+              <input id="bannerLink" type="url" placeholder="Enter URL (e.g., https://google.com)" class="w-full rounded-lg bg-white/80 dark:bg-slate-700/70 border p-3" required>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="w-full py-3 rounded-lg bg-lime-400 hover:bg-lime-500 text-slate-900 font-semibold transition-colors">
+              <i class="fas fa-upload mr-2"></i>
+              Update Banner
+            </button>
+          </form>
+
+          <!-- Image Preview -->
+          <div id="bannerPreview" class="mt-4"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+  <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur rounded-xl p-6 max-w-sm mx-4 shadow-2xl border border-green-200 dark:border-green-800 notification-sent">
+    <div class="text-center">
+      <div class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-check text-2xl text-green-600 dark:text-green-400"></i>
+      </div>
+      <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Success!</h3>
+      <p id="successMessage" class="text-sm text-gray-600 dark:text-gray-400 mb-4">Operation completed successfully.</p>
+      <button onclick="closeSuccessModal()" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors">
+        Continue
+      </button>
+    </div>
+  </div>
+</div>
 
 <script>
 // Firebase Configuration
@@ -88,7 +375,7 @@ firebase.initializeApp({
   apiKey: "AIzaSyAn172ndihcZRqCBAxKYATkc3Hf_uNi4hw",
   authDomain: "unisphere-35100.firebaseapp.com",
   projectId: "unisphere-35100",
-  storageBucket: "unisphere-35100.firebasestorage.app",
+  storageBucket: "unisphere-35100.appspot.com",
   messagingSenderId: "331319571025",
   appId: "1:331319571025:web:f21eaacd723daff8533e70"
 });
@@ -96,17 +383,320 @@ firebase.initializeApp({
 const auth = firebase.auth();
 const $ = id => document.getElementById(id);
 
-// Auth State Management
-auth.onAuthStateChanged(user => user ? showUpload() : showLogin());
+// Current tab state
+let currentTab = 'notifications';
 
-function showLogin() {
-  loginSection.classList.remove('hidden');
-  uploadSection.classList.add('hidden');
+// UniSphere Admin Notification System
+class UniSphereAdminNotifications {
+  constructor() {
+    this.appName = "UniSphere";
+    this.isEnabled = false;
+    this.history = JSON.parse(localStorage.getItem('unisphere_notification_history') || '[]');
+    this.stats = JSON.parse(localStorage.getItem('unisphere_notification_stats') || '{"total": 0, "today": 0, "lastSent": null}');
+    this.init();
+  }
+
+  async init() {
+    // Request notification permission
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission();
+      this.isEnabled = permission === "granted";
+      this.updateStatus();
+    }
+
+    // Initialize UI
+    this.setupEventListeners();
+    this.updateStats();
+    this.renderHistory();
+    this.setupCharacterCounters();
+    this.checkDailyReset();
+  }
+
+  updateStatus() {
+    const statusEl = document.getElementById('notificationStatus');
+    const statusDot = statusEl.querySelector('.status-indicator');
+    const statusText = statusEl.querySelector('span');
+
+    if (this.isEnabled) {
+      statusDot.className = 'w-3 h-3 bg-green-500 rounded-full status-indicator';
+      statusText.textContent = 'Notifications Enabled';
+      statusText.className = 'text-sm text-green-600 dark:text-green-400';
+    } else {
+      statusDot.className = 'w-3 h-3 bg-red-500 rounded-full status-indicator';
+      statusText.textContent = 'Notifications Disabled';
+      statusText.className = 'text-sm text-red-600 dark:text-red-400';
+    }
+  }
+
+  setupEventListeners() {
+    // Form submission
+    document.getElementById('notificationForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.sendNotification();
+    });
+
+    // Preview button
+    document.getElementById('previewBtn').addEventListener('click', () => {
+      this.previewNotification();
+    });
+
+    // Clear history
+    document.getElementById('clearHistory').addEventListener('click', () => {
+      this.clearHistory();
+    });
+  }
+
+  setupCharacterCounters() {
+    const titleInput = document.getElementById('notificationTitle');
+    const messageInput = document.getElementById('notificationMessage');
+    const titleCount = document.getElementById('titleCount');
+    const messageCount = document.getElementById('messageCount');
+
+    titleInput.addEventListener('input', () => {
+      titleCount.textContent = titleInput.value.length;
+    });
+
+    messageInput.addEventListener('input', () => {
+      messageCount.textContent = messageInput.value.length;
+    });
+  }
+
+  checkDailyReset() {
+    const today = new Date().toDateString();
+    const lastDate = localStorage.getItem('unisphere_last_date');
+    
+    if (lastDate !== today) {
+      this.stats.today = 0;
+      localStorage.setItem('unisphere_last_date', today);
+      this.saveStats();
+    }
+  }
+
+  async sendNotification() {
+    if (!this.isEnabled) {
+      alert('Notifications are not enabled. Please allow notifications first.');
+      return;
+    }
+
+    const title = document.getElementById('notificationTitle').value.trim();
+    const message = document.getElementById('notificationMessage').value.trim();
+
+    if (!title || !message) {
+      alert('Please fill in both title and message fields.');
+      return;
+    }
+
+    // Show loading state
+    const sendBtn = document.getElementById('sendNotificationBtn');
+    const sendText = sendBtn.querySelector('.send-text');
+    const loadingSpinner = sendBtn.querySelector('.loading-spinner');
+    
+    sendBtn.disabled = true;
+    sendText.textContent = 'Sending...';
+    loadingSpinner.classList.remove('hidden');
+
+    try {
+      // Create notification
+      const notification = new Notification(`${this.appName} - ${title}`, {
+        body: message,
+        icon: '/favicon.ico',
+        badge: '/icon-192x192.png',
+        tag: `unisphere-admin-${Date.now()}`,
+        requireInteraction: document.getElementById('requireInteraction').checked,
+        silent: document.getElementById('silentMode').checked,
+        vibrate: [200, 100, 200]
+      });
+
+      // Handle notification click
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+
+      // Auto-dismiss
+      const duration = parseInt(document.getElementById('duration').value);
+      if (duration > 0) {
+        setTimeout(() => notification.close(), duration);
+      }
+
+      // Save to history
+      this.addToHistory(title, message);
+      
+      // Update stats
+      this.stats.total++;
+      this.stats.today++;
+      this.stats.lastSent = new Date().toISOString();
+      this.saveStats();
+      this.updateStats();
+
+      // Show success modal
+      showSuccessModal('Notification sent successfully!');
+
+      // Reset form
+      document.getElementById('notificationForm').reset();
+      document.getElementById('titleCount').textContent = '0';
+      document.getElementById('messageCount').textContent = '0';
+
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      alert('Failed to send notification. Please try again.');
+    } finally {
+      // Reset button state
+      sendBtn.disabled = false;
+      sendText.textContent = 'Send Notification';
+      loadingSpinner.classList.add('hidden');
+    }
+  }
+
+  previewNotification() {
+    const title = document.getElementById('notificationTitle').value.trim();
+    const message = document.getElementById('notificationMessage').value.trim();
+
+    if (!title || !message) {
+      alert('Please fill in both title and message to preview.');
+      return;
+    }
+
+    // Create preview alert
+    const preview = document.createElement('div');
+    preview.className = 'fixed top-4 right-4 bg-blue-500 text-white p-4 rounded-lg shadow-xl z-50 max-w-sm animate-slide-up';
+    preview.innerHTML = `
+      <div class="flex items-start space-x-3">
+        <i class="fas fa-user-astronaut text-xl mt-1"></i>
+        <div class="flex-1">
+          <div class="font-bold text-sm">${this.appName} - ${title}</div>
+          <div class="text-sm opacity-90 mt-1">${message}</div>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="mt-3 text-xs opacity-75 border-t border-blue-400 pt-2">
+        Preview - This is how your notification will appear
+      </div>
+    `;
+
+    document.body.appendChild(preview);
+
+    setTimeout(() => {
+      if (preview.parentElement) {
+        preview.remove();
+      }
+    }, 5000);
+  }
+
+  addToHistory(title, message) {
+    const historyItem = {
+      id: Date.now(),
+      title,
+      message,
+      timestamp: new Date().toISOString(),
+      appName: this.appName
+    };
+
+    this.history.unshift(historyItem);
+    
+    // Keep only last 50 notifications
+    if (this.history.length > 50) {
+      this.history = this.history.slice(0, 50);
+    }
+
+    this.saveHistory();
+    this.renderHistory();
+  }
+
+  renderHistory() {
+    const historyContainer = document.getElementById('notificationHistory');
+    
+    if (this.history.length === 0) {
+      historyContainer.innerHTML = `
+        <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+          <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
+          <p>No notifications sent yet</p>
+        </div>
+      `;
+      return;
+    }
+
+    historyContainer.innerHTML = this.history.map(item => {
+      const date = new Date(item.timestamp);
+      const timeAgo = this.timeAgo(date);
+      
+      return `
+        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="font-medium text-sm text-gray-900 dark:text-white">${item.appName} - ${item.title}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">${item.message}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-500 mt-2">${timeAgo}</div>
+            </div>
+            <i class="fas fa-paper-plane text-blue-500 text-sm ml-2"></i>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  updateStats() {
+    document.getElementById('sentToday').textContent = this.stats.today;
+    document.getElementById('totalSent').textContent = this.stats.total;
+    
+    if (this.stats.lastSent) {
+      const lastSentDate = new Date(this.stats.lastSent);
+      document.getElementById('lastSent').textContent = this.timeAgo(lastSentDate);
+    }
+  }
+
+  timeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+  }
+
+  clearHistory() {
+    if (confirm('Are you sure you want to clear all notification history?')) {
+      this.history = [];
+      this.saveHistory();
+      this.renderHistory();
+    }
+  }
+
+  saveHistory() {
+    localStorage.setItem('unisphere_notification_history', JSON.stringify(this.history));
+  }
+
+  saveStats() {
+    localStorage.setItem('unisphere_notification_stats', JSON.stringify(this.stats));
+  }
 }
 
-function showUpload() {
-  loginSection.classList.add('hidden');
-  uploadSection.classList.remove('hidden');
+// Initialize notification system
+let adminNotifications;
+
+// Auth State Management
+auth.onAuthStateChanged(user => {
+  if (user) {
+    showAdmin();
+    // Initialize notification system after login
+    if (!adminNotifications) {
+      adminNotifications = new UniSphereAdminNotifications();
+    }
+  } else {
+    showLogin();
+  }
+});
+
+function showLogin() {
+  $('loginSection').classList.remove('hidden');
+  $('adminSection').classList.add('hidden');
+}
+
+function showAdmin() {
+  $('loginSection').classList.add('hidden');
+  $('adminSection').classList.remove('hidden');
 }
 
 // Login Function
@@ -114,29 +704,72 @@ async function login() {
   const email = $('email').value.trim();
   const pass = $('password').value.trim();
   
-  loginError.classList.add('hidden');
+  $('loginError').classList.add('hidden');
   
   if (!email || !pass) {
-    loginError.textContent = 'Please fill both fields';
-    loginError.classList.remove('hidden');
+    $('loginError').textContent = 'Please fill both fields';
+    $('loginError').classList.remove('hidden');
     return;
   }
 
-  toggleBtn(true, loginBtn, 'Logging in...');
+  toggleBtn(true, $('loginBtn'), 'Logging in...');
   
   try {
     await auth.signInWithEmailAndPassword(email, pass);
   } catch (e) {
-    loginError.textContent = mapErr(e);
-    loginError.classList.remove('hidden');
+    $('loginError').textContent = mapErr(e);
+    $('loginError').classList.remove('hidden');
   } finally {
-    toggleBtn(false, loginBtn, 'Login');
+    toggleBtn(false, $('loginBtn'), 'Login');
   }
 }
 
 // Logout Function
 function logout() {
   auth.signOut();
+}
+
+// Tab Switching
+function switchTab(tabName) {
+  currentTab = tabName;
+  
+  // Update tab buttons
+  if (tabName === 'notifications') {
+    $('notificationTab').classList.remove('bg-gray-200', 'dark:bg-gray-600', 'text-gray-700', 'dark:text-gray-300');
+    $('notificationTab').classList.add('bg-blue-500', 'text-white', 'shadow-md', '-translate-y-0.5');
+    $('notificationTab').setAttribute('aria-selected', 'true');
+    
+    $('bannerTab').classList.remove('bg-blue-500', 'text-white', 'shadow-md', '-translate-y-0.5');
+    $('bannerTab').classList.add('bg-gray-200', 'dark:bg-gray-600', 'text-gray-700', 'dark:text-gray-300');
+    $('bannerTab').setAttribute('aria-selected', 'false');
+    
+    // Show/hide panels
+    $('notificationsPanel').classList.remove('hidden');
+    $('bannerPanel').classList.add('hidden');
+  } else {
+    $('bannerTab').classList.remove('bg-gray-200', 'dark:bg-gray-600', 'text-gray-700', 'dark:text-gray-300');
+    $('bannerTab').classList.add('bg-blue-500', 'text-white', 'shadow-md', '-translate-y-0.5');
+    $('bannerTab').setAttribute('aria-selected', 'true');
+    
+    $('notificationTab').classList.remove('bg-blue-500', 'text-white', 'shadow-md', '-translate-y-0.5');
+    $('notificationTab').classList.add('bg-gray-200', 'dark:bg-gray-600', 'text-gray-700', 'dark:text-gray-300');
+    $('notificationTab').setAttribute('aria-selected', 'false');
+    
+    // Show/hide panels
+    $('bannerPanel').classList.remove('hidden');
+    $('notificationsPanel').classList.add('hidden');
+  }
+}
+
+// Theme Toggle
+$('themeToggle').addEventListener('click', () => {
+  document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+});
+
+// Load saved theme
+if (localStorage.getItem('theme') === 'dark') {
+  document.documentElement.classList.add('dark');
 }
 
 // Error Message Mapping
@@ -150,38 +783,38 @@ function mapErr(e) {
   }
 }
 
-// Image Preview
-bannerImage.onchange = () => {
-  bannerPreview.innerHTML = '';
-  const file = bannerImage.files[0];
+// Banner Upload Functions
+$('bannerImage').onchange = () => {
+  $('bannerPreview').innerHTML = '';
+  const file = $('bannerImage').files[0];
   
   if (!file) return;
   
   if (file.size > 5 * 1024 * 1024) {
     alert('File size must be less than 5MB');
-    bannerImage.value = '';
+    $('bannerImage').value = '';
     return;
   }
   
   const reader = new FileReader();
   reader.onload = e => {
-    bannerPreview.innerHTML = `<img src="${e.target.result}" class="rounded w-full max-h-56 object-contain border mt-2" alt="Banner Preview">`;
+    $('bannerPreview').innerHTML = `<img src="${e.target.result}" class="rounded w-full max-h-56 object-contain border mt-2" alt="Banner Preview">`;
   };
   reader.readAsDataURL(file);
 };
 
 // Banner Upload Form Handler
-uploadBannerForm.addEventListener('submit', async e => {
+$('uploadBannerForm').addEventListener('submit', async e => {
   e.preventDefault();
   
-  if (!bannerImage.files.length) { 
+  if (!$('bannerImage').files.length) { 
     alert('Choose an image'); 
     return; 
   }
   
-  if (!bannerLink.value.trim()) { 
-    alert('Enter a URL'); 
-    return; 
+  let linkValue = $('bannerLink').value.trim();
+  if (!linkValue.startsWith('http://') && !linkValue.startsWith('https://')) {
+    linkValue = 'https://' + linkValue; // auto add prefix
   }
 
   if (!auth.currentUser) {
@@ -190,18 +823,18 @@ uploadBannerForm.addEventListener('submit', async e => {
     return;
   }
 
-  const btn = uploadBannerForm.querySelector('button');
+  const btn = $('uploadBannerForm').querySelector('button');
   toggleBtn(true, btn, 'Uploading...');
   
   try {
     const fd = new FormData();
-    fd.append('banner', bannerImage.files[0]);
-    fd.append('link', bannerLink.value.trim());
+    fd.append('banner', $('bannerImage').files[0]);
+    fd.append('link', linkValue);
     
     console.log('📤 Uploading banner:', {
-      hasFile: !!bannerImage.files[0],
-      fileName: bannerImage.files?.name,
-      linkValue: bannerLink.value.trim()
+      hasFile: !!$('bannerImage').files,
+      fileName: $('bannerImage').files?.name,
+      linkValue
     });
 
     const res = await fetch('/api/upload/banner', { 
@@ -212,11 +845,9 @@ uploadBannerForm.addEventListener('submit', async e => {
     const result = await res.json();
     
     if (res.ok) {
-      alert('✅ ' + (result.message || 'Banner uploaded successfully'));
-      // Clear form
-      bannerImage.value = '';
-      bannerLink.value = '';
-      bannerPreview.innerHTML = '';
+      showSuccessModal('Banner uploaded successfully!');
+      $('uploadBannerForm').reset();
+      $('bannerPreview').innerHTML = '';
     } else {
       alert('❌ ' + (result.message || 'Upload failed'));
     }
@@ -229,6 +860,16 @@ uploadBannerForm.addEventListener('submit', async e => {
   }
 });
 
+// Global functions
+function showSuccessModal(message) {
+  $('successMessage').textContent = message;
+  $('successModal').classList.remove('hidden');
+}
+
+function closeSuccessModal() {
+  $('successModal').classList.add('hidden');
+}
+
 // Button Toggle Helper
 function toggleBtn(disabled, btn, label) {
   btn.disabled = disabled;
@@ -237,8 +878,8 @@ function toggleBtn(disabled, btn, label) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('✅ Admin banner panel loaded');
-  console.log('📋 Ready to upload banner with image + URL');
+  console.log('🚀 UniSphere Complete Admin Panel Loaded');
+  console.log('📋 Features: Notifications + Banner Upload + Firebase Auth');
 });
 </script>
 
