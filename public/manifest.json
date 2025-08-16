@@ -1,0 +1,28 @@
+{
+    "name": "UniSphere Oracle",
+    "short_name": "UniSphere",
+    "description": "Anonymous social platform with mystical Oracle insights",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1F2937",
+    "theme_color": "#3B82F6",
+    "icons": [
+      {
+        "src": "/icon-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "maskable any"
+      },
+      {
+        "src": "/icon-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ],
+    "categories": ["social", "lifestyle"],
+    "lang": "en",
+    "dir": "ltr",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false
+  }
+  
