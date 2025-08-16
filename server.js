@@ -5,6 +5,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 const { isToxic, isImageUnsafe, moderateText } = require('./moderation');
 const BadWord = require('./models/moderation');
 const app = express();
@@ -26,6 +27,9 @@ app.use(cors({
 // Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Trust proxy for accurate IP detection
+app.set('trust proxy', true);
 
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -88,7 +92,7 @@ const postSchema = new mongoose.Schema({
       default: 0 
     },
     voters: [{ 
-      type: String // User IDs who voted for this option
+      type: String // IP addresses who voted for this option
     }]
   }],
   allowMultiple: { 
@@ -99,6 +103,9 @@ const postSchema = new mongoose.Schema({
     type: Number, 
     default: 0 
   },
+  voterIPs: [{ 
+    type: String // All IP addresses that have voted in this poll
+  }],
   imageUrl: { 
     type: String, 
     trim: true 
@@ -128,15 +135,15 @@ const postSchema = new mongoose.Schema({
   }]
 });
 
-
+// Banner schema with linkUrl
 const bannerSchema = new mongoose.Schema({
   imageUrl: String,
+  linkUrl: String,
   updatedAt: { type: Date, default: Date.now }
 });
 
 const backgroundSchema = new mongoose.Schema({
   imageUrl: String,
-
   updatedAt: { type: Date, default: Date.now }
 });
 
@@ -144,6 +151,27 @@ const backgroundSchema = new mongoose.Schema({
 const Post = mongoose.model('Post', postSchema);
 const Banner = mongoose.model('Banner', bannerSchema);
 const Background = mongoose.model('Background', backgroundSchema);
+
+// Utility function to get clean IP address
+function getClientIP(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  const realIP = req.headers['x-real-ip'];
+  const connectionIP = req.connection?.remoteAddress;
+  const socketIP = req.socket?.remoteAddress;
+  const reqIP = req.ip;
+  
+  let ip = forwarded || realIP || connectionIP || socketIP || reqIP || '127.0.0.1';
+  
+  // Handle comma-separated IPs (proxy chains)
+  if (ip.includes(',')) {
+    ip = ip.split(',')[0].trim();
+  }
+  
+  // Remove IPv6 prefix
+  ip = ip.replace(/^::ffff:/, '');
+  
+  return ip;
+}
 
 // Moderation Middleware
 async function moderateAllContent(req, res, next) {
@@ -194,11 +222,6 @@ async function moderateAllContent(req, res, next) {
   }
 }
 
-// Routes
-
-
-// Routes
-
 // Upload banner image with link URL
 app.post('/api/upload/banner', upload.fields([
   { name: 'banner', maxCount: 1 },
@@ -207,16 +230,13 @@ app.post('/api/upload/banner', upload.fields([
   console.log('📥 Files received:', req.files);
   console.log('📝 Body received:', req.body);
   
-  // Extract file and link
   const bannerFile = req.files && req.files['banner'] ? req.files['banner'][0] : null;
   const linkUrl = req.body.link;
 
-  // Validation
   if (!bannerFile) return res.status(400).json({ message: 'No banner image uploaded' });
   if (!linkUrl) return res.status(400).json({ message: 'Banner link URL is required' });
 
   try {
-    // Convert to base64 and upload to Cloudinary
     const b64 = Buffer.from(bannerFile.buffer).toString("base64");
     const dataUri = `data:${bannerFile.mimetype};base64,${b64}`;
     const result = await cloudinary.uploader.upload(dataUri, {
@@ -224,7 +244,6 @@ app.post('/api/upload/banner', upload.fields([
       resource_type: 'image'
     });
 
-    // Save to database with both image and link
     const bannerDoc = await Banner.findOneAndUpdate({}, {
       imageUrl: result.secure_url,
       linkUrl: linkUrl.trim(),
@@ -264,7 +283,6 @@ app.post('/api/upload/background', upload.single('background'), async (req, res)
   if (!req.file) return res.status(400).json({ message: 'No background image uploaded' });
   
   try {
-    // Check image safety
     const imageUnsafe = await isImageUnsafe(req.file.buffer, req.file.mimetype);
     if (imageUnsafe === true) {
       return res.status(400).json({ message: 'Background image contains inappropriate content' });
@@ -305,7 +323,6 @@ app.post('/api/upload/post', upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
   
   try {
-    // Check image for unsafe content BEFORE uploading to Cloudinary
     const imageUnsafe = await isImageUnsafe(req.file.buffer, req.file.mimetype);
     
     if (imageUnsafe === true) {
@@ -316,7 +333,6 @@ app.post('/api/upload/post', upload.single('image'), async (req, res) => {
       return res.status(400).json({ message: 'Unable to verify image safety - upload blocked' });
     }
 
-    // Image is safe, proceed with Cloudinary upload
     const b64 = Buffer.from(req.file.buffer).toString("base64");
     const dataUri = `data:${req.file.mimetype};base64,${b64}`;
     const result = await cloudinary.uploader.upload(dataUri, {
@@ -336,13 +352,11 @@ app.post('/api/posts', moderateAllContent, async (req, res) => {
   try {
     const { type, content, question, options, allowMultiple, imageUrl } = req.body;
     
-    // Validate post type
     if (!['text', 'poll'].includes(type)) {
       return res.status(400).json({ message: 'Invalid post type' });
     }
     
     if (type === 'text') {
-      // Text post validation
       if (!content && !imageUrl) {
         return res.status(400).json({ message: 'Text post requires content or image' });
       }
@@ -357,7 +371,6 @@ app.post('/api/posts', moderateAllContent, async (req, res) => {
       res.status(201).json({ message: 'Post created successfully', post: newPost });
       
     } else if (type === 'poll') {
-      // Poll validation
       if (!question) {
         return res.status(400).json({ message: 'Poll requires a question' });
       }
@@ -379,7 +392,8 @@ app.post('/api/posts', moderateAllContent, async (req, res) => {
           voters: []
         })),
         allowMultiple: allowMultiple || false,
-        totalVotes: 0
+        totalVotes: 0,
+        voterIPs: []
       });
       
       await newPost.save();
@@ -392,23 +406,51 @@ app.post('/api/posts', moderateAllContent, async (req, res) => {
   }
 });
 
-// Get all posts
+// UPDATED: Get all posts with percentages
 app.get('/api/posts', async (req, res) => {
   try {
     const posts = await Post.find().sort({ createdAt: -1 });
-    res.json(posts);
+    
+    const postsWithPercentages = posts.map(post => {
+      if (post.type === 'poll') {
+        const totalVoteCount = post.options.reduce((sum, opt) => sum + opt.votes, 0);
+        
+        const optionsWithPercentages = post.options.map(option => {
+          const percentage = totalVoteCount > 0 ? 
+            Math.round((option.votes / totalVoteCount) * 100) : 0;
+          
+          return {
+            text: option.text,
+            votes: option.votes,
+            voters: option.voters,
+            percentage: percentage
+          };
+        });
+        
+        return {
+          ...post.toObject(),
+          options: optionsWithPercentages,
+          totalVotes: post.voterIPs ? post.voterIPs.length : totalVoteCount
+        };
+      }
+      return post;
+    });
+    
+    res.json(postsWithPercentages);
   } catch (error) {
     console.error("Posts fetch error:", error);
     res.status(500).json({ message: "Server error fetching posts" });
   }
 });
 
-// Like a post
+// Enhanced like endpoint
 app.post('/api/posts/:postId/like', async (req, res) => {
   try {
     const { postId } = req.params;
     const { liked } = req.body;
-    const userId = req.body.userId || req.ip; // Use IP as fallback for user identification
+    
+    const ip = getClientIP(req);
+    const userId = crypto.createHash('md5').update(ip + (req.get('User-Agent') || '')).digest('hex');
     
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ message: 'Post not found' });
@@ -434,47 +476,90 @@ app.post('/api/posts/:postId/like', async (req, res) => {
   }
 });
 
-// Vote on poll
+// UPDATED: Enhanced vote endpoint - 1 vote per IP with percentages
 app.post('/api/posts/:postId/vote', async (req, res) => {
   try {
     const { postId } = req.params;
-    const { optionIndex } = req.body;
-    const userId = req.body.userId || req.ip;
+    const { optionIndex, optionIndexes, allowMultiple } = req.body;
+    
+    const ip = getClientIP(req);
     
     const post = await Post.findById(postId);
     if (!post || post.type !== 'poll') {
       return res.status(404).json({ message: 'Poll not found' });
     }
     
-    if (optionIndex < 0 || optionIndex >= post.options.length) {
-      return res.status(400).json({ message: 'Invalid option' });
-    }
-    
-    const option = post.options[optionIndex];
-    const hasVoted = option.voters.includes(userId);
-    
-    if (!post.allowMultiple) {
-      // Remove user's previous votes if single selection
-      post.options.forEach(opt => {
-        if (opt.voters.includes(userId)) {
-          opt.votes = Math.max(0, opt.votes - 1);
-          opt.voters = opt.voters.filter(id => id !== userId);
-          post.totalVotes = Math.max(0, post.totalVotes - 1);
-        }
+    // Check if this IP has already voted in this poll
+    if (post.voterIPs && post.voterIPs.includes(ip)) {
+      return res.status(400).json({ 
+        message: 'You have already voted in this poll. Only one vote per person is allowed.',
+        alreadyVoted: true
       });
     }
     
-    if (!hasVoted) {
-      option.votes += 1;
-      option.voters.push(userId);
-      post.totalVotes += 1;
+    // Process the vote
+    if (allowMultiple && optionIndexes && Array.isArray(optionIndexes)) {
+      // Multiple selection voting
+      if (optionIndexes.length === 0) {
+        return res.status(400).json({ message: 'Please select at least one option' });
+      }
+      
+      optionIndexes.forEach(index => {
+        if (index >= 0 && index < post.options.length) {
+          post.options[index].votes += 1;
+          post.options[index].voters.push(ip);
+        }
+      });
+      
+    } else {
+      // Single selection voting
+      if (optionIndex < 0 || optionIndex >= post.options.length) {
+        return res.status(400).json({ message: 'Invalid option selected' });
+      }
+      
+      post.options[optionIndex].votes += 1;
+      post.options[optionIndex].voters.push(ip);
     }
     
+    // Add IP to voterIPs array
+    if (!post.voterIPs) {
+      post.voterIPs = [];
+    }
+    post.voterIPs.push(ip);
+    post.totalVotes = post.voterIPs.length;
+    
     await post.save();
-    res.json({ 
-      message: 'Vote recorded successfully', 
-      post 
+    
+    // Calculate percentages
+    const totalVoteCount = post.options.reduce((sum, opt) => sum + opt.votes, 0);
+    const optionsWithPercentages = post.options.map(option => {
+      const percentage = totalVoteCount > 0 ? 
+        Math.round((option.votes / totalVoteCount) * 100) : 0;
+      
+      return {
+        text: option.text,
+        votes: option.votes,
+        voters: option.voters,
+        percentage: percentage
+      };
     });
+    
+    // Find leading option(s)
+    const maxPercentage = Math.max(...optionsWithPercentages.map(opt => opt.percentage));
+    const leadingOptions = optionsWithPercentages.filter(opt => opt.percentage === maxPercentage);
+    
+    const responsePost = {
+      ...post.toObject(),
+      options: optionsWithPercentages
+    };
+    
+    res.json({ 
+      message: 'Vote recorded successfully!', 
+      post: responsePost,
+      leadingOptions: leadingOptions.map(opt => ({ text: opt.text, percentage: opt.percentage })),
+      totalUniqueVoters: post.voterIPs.length
+    });
+    
   } catch (error) {
     console.error('Vote error:', error);
     res.status(500).json({ message: 'Failed to record vote' });
@@ -487,7 +572,6 @@ app.post('/api/posts/:postId/comments', async (req, res) => {
     const { content } = req.body;
     if (!content) return res.status(400).json({ message: 'Comment cannot be empty' });
 
-    // Moderate comment content
     const moderationResult = await moderateText(content, ['en', 'es', 'fr', 'hi', 'kn']);
     
     if (moderationResult.isBlocked) {
@@ -543,7 +627,17 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    features: ['text-posts', 'polls', 'comments', 'likes', 'image-uploads', 'moderation', 'clickable-banners']
+    features: [
+      'text-posts', 
+      'polls', 
+      'comments', 
+      'likes', 
+      'image-uploads', 
+      'moderation', 
+      'clickable-banners',
+      'one-vote-per-ip',
+      'poll-percentages'
+    ]
   });
 });
 
@@ -571,4 +665,5 @@ app.listen(PORT, () => {
   console.log(`📊 Features: Text Posts, Polls, Comments, Likes, Image Uploads`);
   console.log(`🔒 Moderation: Active for all content types`);
   console.log(`🎯 Banner System: Clickable banners with custom URLs`);
+  console.log(`🗳️ Poll System: 1 vote per IP + Percentages`);
 });
