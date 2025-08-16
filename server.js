@@ -423,6 +423,34 @@ app.get('/api/background', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch background' });
   }
 });
+// Oracle system endpoints
+// Manual notification endpoint - YOU control when to trigger
+app.post('/api/send-notification', async (req, res) => {
+  try {
+    const { title, message, options } = req.body;
+    
+    // Log the notification request
+    console.log('📱 Manual notification request:', {
+      title,
+      message,
+      timestamp: new Date()
+    });
+    
+    // Here you could store in database, send to specific users, etc.
+    // For now, just acknowledge the request
+    
+    res.json({
+      success: true,
+      message: 'Notification request received',
+      data: { title, message, options }
+    });
+    
+  } catch (error) {
+    console.error('Notification error:', error);
+    res.status(500).json({ error: 'Failed to process notification' });
+  }
+});
+
 
 // Static routes
 app.get('/upload.html', (req, res) => {
