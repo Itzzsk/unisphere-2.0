@@ -383,7 +383,6 @@
           </button>
         </div>
       </div>
-    
 
       <!-- Tab Content Container -->
       <div class="relative bg-gray-50 dark:bg-gray-900 min-h-[500px]">
@@ -481,43 +480,23 @@
 
 <!-- Main Content -->
 <main class="pt-20 pb-24 px-4" role="main">
-<!-- Banner -->
-<!-- Banner -->
-<div class="relative mb-12 max-w-4xl mx-auto rounded-xl overflow-hidden
-            shadow-lg hover:shadow-xl transition-shadow duration-300">
 
-  <!-- Clickable area -->
-  <a id="bannerLinkWrapper"
-     href="#"
-     target="_blank"
-     rel="noopener noreferrer"
-     class="block rounded-xl overflow-hidden
-            focus:outline-none focus:ring-4 focus:ring-blue-400/40">
-
-    <!-- Real banner (starts hidden) -->
-    <img id="bannerImage"
-         src=""
-         alt="UniSphere Banner"
-         class="w-full h-48 md:h-60 object-cover rounded-xl
-                opacity-0 transition-opacity duration-300
-                hover:scale-105" />
+<!-- Banner with proper click handling -->
+<div class="relative mb-10 rounded-xl overflow-hidden shadow-lg max-w-4xl mx-auto">
+  <!-- Clickable banner link -->
+  <a id="bannerLinkWrapper" 
+     href="https://google.com" 
+     target="_blank" 
+     rel="noopener noreferrer" 
+     class="block cursor-pointer">
+    
+    <img id="bannerImage" 
+         src="uni1.jpg" 
+         alt="UniSphere Banner" 
+         class="w-full h-48 md:h-60 object-cover rounded-xl hover:opacity-90 transition-opacity cursor-pointer" />
   </a>
+  
 
-  <!-- Placeholder (absolutely positioned, no pointer events) -->
-  <div id="bannerPlaceholder"
-       class="absolute inset-0 flex items-center justify-center
-              bg-gradient-to-br from-gray-200 to-gray-300
-              dark:from-gray-700 dark:to-gray-800
-              text-gray-500 dark:text-gray-400 rounded-xl
-              transition-colors duration-300 pointer-events-none"
-       aria-live="polite">
-
-    <div class="text-center">
-      <i class="fas fa-image text-5xl mb-3 animate-pulse-slow" aria-hidden="true"></i>
-      <p class="font-medium text-lg">No banner image found</p>
-      <p class="text-sm opacity-75">Upload a banner in the admin panel</p>
-    </div>
-  </div>
 </div>
 
 
@@ -638,7 +617,6 @@ function switchTab(activeTabId, inactiveTabId, activeContentId, inactiveContentI
     );
   }, 150);
 }
-
 
 // Enhanced Show Tab Function
 function showTab(tabId) {
@@ -777,8 +755,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   console.log('✅ All Tailwind features initialized successfully');
 });
-
-
 </script>
 
 </body>
