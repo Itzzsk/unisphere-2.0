@@ -769,7 +769,7 @@ function disablePoll(postId) {
   }
 }
 
-// UPDATED: Poll UI Update with Final State
+// FIXED: Poll UI Update with Proper Percentage Display
 function updatePollUIWithPercentages(postId, pollData) {
   const pollContainer = document.getElementById(`poll-${postId}`);
   if (!pollContainer) return;
@@ -789,7 +789,7 @@ function updatePollUIWithPercentages(postId, pollData) {
     
     const votesSpan = optionElement.querySelector('.option-votes');
     const progressBar = optionElement.querySelector('.poll-results');
-    const percentageDiv = optionElement.querySelector('.text-xs');
+    const percentageContainer = optionElement.querySelector('.flex.justify-between.items-center:last-child');
     
     const percentage = optionData.percentage || 0;
     const isWinning = percentage > 0 && percentage === maxPercentage;
@@ -803,7 +803,14 @@ function updatePollUIWithPercentages(postId, pollData) {
     
     // Update progress bar with animation
     if (progressBar) {
-      progressBar.style.width = `${percentage}%`;
+      // Force a reflow to ensure smooth animation
+      progressBar.style.width = '0%';
+      progressBar.offsetHeight; // Trigger reflow
+      
+      setTimeout(() => {
+        progressBar.style.width = `${percentage}%`;
+      }, 50);
+      
       progressBar.className = `poll-results h-1 rounded-full transition-all duration-1000 ease-out ${
         isWinning ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-blue-500'
       }`;
@@ -815,32 +822,40 @@ function updatePollUIWithPercentages(postId, pollData) {
       optionElement.classList.add('ring-2', 'ring-green-500', 'bg-green-50', 'dark:bg-green-900');
     }
     
-    // Update percentage display
-    if (percentageDiv) {
-      percentageDiv.innerHTML = `
-        <div class="flex justify-between items-center">
-          <div class="text-xs font-bold ${isWinning ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}">${percentage}%</div>
-          ${isWinning && percentage > 0 ? '<span class="text-xs text-yellow-600 dark:text-yellow-400 font-medium">🏆</span>' : ''}
-        </div>
+    // Update percentage display with proper selector
+    if (percentageContainer) {
+      percentageContainer.innerHTML = `
+        <div class="text-xs font-bold ${isWinning ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}">${percentage}%</div>
+        ${isWinning && percentage > 0 ? '<span class="text-xs text-yellow-600 dark:text-yellow-400 font-medium">🏆</span>' : ''}
       `;
     }
     
     // Update option text with proper icons
     const optionText = optionElement.querySelector('span');
     if (optionText) {
-      const text = optionData.text;
+      const originalText = optionData.text;
       let icons = '';
       
       if (hasVoted && isUserVote) {
         icons += '<i class="fas fa-check-circle text-green-500 mr-1 text-xs" title="Your vote"></i>';
+      } else if (!hasVoted) {
+        if (pollData.allowMultiple) {
+          icons += isUserVote ? 
+            '<i class="fas fa-check-square text-blue-500 mr-1 text-xs" title="Selected"></i>' :
+            '<i class="far fa-square text-gray-400 mr-1 text-xs" title="Click to select"></i>';
+        } else {
+          icons += '<i class="far fa-circle text-gray-400 mr-1 text-xs" title="Click to vote"></i>';
+        }
       }
+      
       if (isWinning && percentage > 0) {
         icons += '<i class="fas fa-crown text-yellow-500 mr-1 text-xs" title="Leading option"></i>';
       }
       
-      // Clean up existing icons and add new ones
-      const textOnly = text.replace(/<i[^>]*><\/i>/g, '').trim();
-      optionText.innerHTML = `${icons}${escapeHtml(textOnly)}`;
+      // Safely update the text content
+      const textContent = optionText.textContent || '';
+      const cleanText = textContent.replace(/^[^\w]*/, ''); // Remove leading icons/symbols
+      optionText.innerHTML = `${icons}${escapeHtml(cleanText)}`;
     }
   });
   
@@ -848,6 +863,8 @@ function updatePollUIWithPercentages(postId, pollData) {
   if (totalVotesSpan) {
     totalVotesSpan.textContent = pollData.totalVotes || 0;
   }
+  
+  console.log('✅ Poll UI updated with percentages:', pollData.options.map(opt => `${opt.text}: ${opt.percentage}%`));
 }
 
 // Like functionality
