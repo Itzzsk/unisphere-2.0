@@ -99,11 +99,10 @@ const postSchema = new mongoose.Schema({
   options: [{
     text: String,
     votes: { type: Number, default: 0 },
-    voters: [String]
+    voters: [String] // Still track voters for analytics but don't restrict
   }],
   allowMultiple: { type: Boolean, default: false },
   totalVotes: { type: Number, default: 0 },
-  voterIPs: [String],
   imageUrl: String,
   comments: [{
     content: String,
@@ -199,8 +198,7 @@ app.post('/api/posts', async (req, res) => {
           voters: []
         })),
         allowMultiple: allowMultiple || false,
-        totalVotes: 0,
-        voterIPs: []
+        totalVotes: 0
       });
       
       const savedPost = await newPost.save();
@@ -248,28 +246,24 @@ app.get('/api/posts', async (req, res) => {
   }
 });
 
-// Vote endpoint
+// FIXED: Vote endpoint - REMOVED IP RESTRICTION, EVERYONE CAN VOTE
 app.post('/api/posts/:postId/vote', async (req, res) => {
   try {
     const { postId } = req.params;
     const { optionIndex, optionIndexes, allowMultiple } = req.body;
     const ip = getClientIP(req);
 
+    console.log('🗳️ Vote received:', { postId, optionIndex, optionIndexes, allowMultiple, ip });
+
     const post = await Post.findById(postId);
     if (!post || post.type !== 'poll') {
       return res.status(404).json({ message: 'Poll not found' });
     }
 
-    // Check if already voted
-    if (post.voterIPs && post.voterIPs.includes(ip)) {
-      return res.status(400).json({ 
-        message: 'You have already voted in this poll',
-        alreadyVoted: true
-      });
-    }
+    // REMOVED: IP restriction check - everyone can vote multiple times now
+    // No more checking if IP already voted
 
     // Initialize arrays
-    if (!post.voterIPs) post.voterIPs = [];
     post.options.forEach((option, index) => {
       if (!option.voters) post.options[index].voters = [];
       if (typeof option.votes !== 'number') post.options[index].votes = 0;
@@ -281,29 +275,43 @@ app.post('/api/posts/:postId/vote', async (req, res) => {
         return res.status(400).json({ message: 'Please select exactly 2 options' });
       }
 
-      optionIndexes.forEach(idx => {
-        if (idx >= 0 && idx < post.options.length) {
-          post.options[idx].votes += 1;
-          post.options[idx].voters.push(ip);
+      // Validate indexes
+      for (const idx of optionIndexes) {
+        if (idx < 0 || idx >= post.options.length) {
+          return res.status(400).json({ message: 'Invalid option selected' });
         }
+      }
+
+      // Add votes to multiple options
+      optionIndexes.forEach(idx => {
+        post.options[idx].votes += 1;
+        post.options[idx].voters.push(ip); // Track for analytics only
+        console.log(`✅ Vote added to option ${idx}: "${post.options[idx].text}"`);
       });
+
     } else {
+      // Single choice
       let selectedIndex = optionIndex !== undefined ? optionIndex : optionIndexes?.[0];
       
-      if (selectedIndex >= 0 && selectedIndex < post.options.length) {
-        post.options[selectedIndex].votes += 1;
-        post.options[selectedIndex].voters.push(ip);
+      if (selectedIndex < 0 || selectedIndex >= post.options.length) {
+        return res.status(400).json({ message: 'Invalid option selected' });
       }
+
+      post.options[selectedIndex].votes += 1;
+      post.options[selectedIndex].voters.push(ip); // Track for analytics only
+      console.log(`✅ Vote added to option ${selectedIndex}: "${post.options[selectedIndex].text}"`);
     }
 
-    // Save vote
-    post.voterIPs.push(ip);
+    // Calculate totals
     const totalVoteCount = post.options.reduce((sum, opt) => sum + (opt.votes || 0), 0);
     post.totalVotes = totalVoteCount;
 
+    // Save vote
     await post.save();
 
-    // Calculate percentages
+    console.log('✅ Vote saved successfully');
+
+    // Calculate percentages for response
     const optionsWithPercentages = post.options.map(option => ({
       text: option.text,
       votes: option.votes || 0,
@@ -323,6 +331,7 @@ app.post('/api/posts/:postId/vote', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Vote error:', error);
     res.status(500).json({ message: 'Failed to record vote' });
   }
 });
@@ -440,5 +449,5 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Features: Posts, Polls, Comments, Likes`);
-  console.log(`🗳️ Poll System: 1 vote per IP`);
+  console.log(`🗳️ Poll System: UNLIMITED VOTING - Everyone can vote multiple times`);
 });
