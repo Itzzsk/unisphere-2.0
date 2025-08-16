@@ -13,9 +13,7 @@ const PORT = process.env.PORT || 5000;
 // CORS Configuration
 app.use(cors({
   origin: [
-    'http://localhost:3000',
-    'http://localhost:5000',
-    'http://localhost:8080',
+ 'http://localhost:5000',
     'https://res.cloudinary.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -762,3 +760,4 @@ app.listen(PORT, () => {
   console.log(`🔒 Moderation: Active for all content types`);
   console.log(`🎯 Banner System: Clickable banners with custom URLs`);
 });
+
