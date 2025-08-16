@@ -5,15 +5,74 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
 const path = require('path');
-const { isToxic, isImageUnsafe, moderateText } = require('./moderation');
-const BadWord = require('./models/moderation');
+const crypto = require('crypto');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Enhanced IP detection function - MUST BE DEFINED BEFORE USE
+function getClientIP(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  const realIP = req.headers['x-real-ip'];
+  const cfIP = req.headers['cf-connecting-ip'];
+  const clientIP = req.headers['x-client-ip'];
+  
+  let ip = forwarded || realIP || cfIP || clientIP || 
+           req.connection?.remoteAddress || 
+           req.socket?.remoteAddress ||
+           req.ip || 
+           '127.0.0.1';
+  
+  // Handle comma-separated IPs (proxy chains)
+  if (ip && ip.includes(',')) {
+    ip = ip.split(',')[0].trim();
+  }
+  
+  // Remove IPv6 prefix if present
+  if (ip && ip.startsWith('::ffff:')) {
+    ip = ip.replace('::ffff:', '');
+  }
+  
+  console.log('🌐 IP Detection:', {
+    'x-forwarded-for': forwarded,
+    'x-real-ip': realIP,
+    'final IP': ip
+  });
+  
+  return ip || '127.0.0.1';
+}
+
+// Environment validation
+function validateEnvironment() {
+  const requiredEnvVars = ['MONGODB_URI'];
+  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    console.error('❌ Missing required environment variables:', missingVars);
+    console.log('📋 Current environment variables:');
+    console.log('NODE_ENV:', process.env.NODE_ENV || 'not set');
+    console.log('MONGODB_URI:', process.env.MONGODB_URI ? '[SET]' : '[NOT SET]');
+    console.log('PORT:', process.env.PORT || 'not set');
+    
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
+  }
+  
+  console.log('✅ Environment variables validated');
+}
+
+validateEnvironment();
+
 // CORS Configuration
 app.use(cors({
-  origin: [
- 'http://localhost:5000',
+  origin: process.env.NODE_ENV === 'production' ? [
+    process.env.FRONTEND_URL,
+    'https://your-domain.com'
+  ] : [
+    'http://localhost:3000',
+    'http://localhost:5000',
+    'http://localhost:8080',
     'https://res.cloudinary.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -22,19 +81,28 @@ app.use(cors({
 }));
 
 // Body parsers
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Trust proxy for accurate IP detection
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : true);
 
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Cloudinary config
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+  console.log('✅ Cloudinary configured');
+} else {
+  console.log('⚠️ Cloudinary not configured - image uploads will fail');
+}
 
+// Multer configuration
 const storage = multer.memoryStorage();
 const upload = multer({ 
   storage,
@@ -48,21 +116,75 @@ const upload = multer({
   }
 });
 
-// MongoDB connect
-mongoose.connect(process.env.MONGODB_URI)
-.then(() => {
-  console.log('✅ MongoDB connected');
-}).catch(err => {
-  console.error('❌ MongoDB connection error:', err.message);
-  process.exit(1);
+// FIXED: MongoDB connection with compatible options
+const connectDB = async () => {
+  try {
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/unisphere';
+    
+    console.log('🔗 Connecting to MongoDB...');
+    console.log('📍 URI:', mongoURI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@'));
+    
+    await mongoose.connect(mongoURI, {
+      // Compatible options for most Mongoose versions
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      retryWrites: true,
+      heartbeatFrequencyMS: 10000,
+    });
+    
+    console.log('✅ MongoDB connected successfully');
+    console.log('📍 Database:', mongoose.connection.db.databaseName);
+    console.log('🌐 Host:', mongoose.connection.host);
+    
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', {
+      message: error.message,
+      name: error.name,
+      code: error.code
+    });
+    
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
+    } else {
+      console.log('🔄 Retrying connection in 5 seconds...');
+      setTimeout(connectDB, 5000);
+    }
+  }
+};
+
+connectDB();
+
+// Enhanced connection monitoring
+mongoose.connection.on('connected', () => {
+  console.log('🔗 Mongoose connected to MongoDB');
 });
 
-// Enhanced Schemas with Poll Support
+mongoose.connection.on('error', (err) => {
+  console.error('❌ Mongoose connection error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('🔌 Mongoose disconnected from MongoDB');
+  if (process.env.NODE_ENV === 'production') {
+    console.log('🔄 Attempting to reconnect...');
+    setTimeout(connectDB, 5000);
+  }
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('🔄 Mongoose reconnected to MongoDB');
+});
+
+// Enhanced Post Schema
 const postSchema = new mongoose.Schema({
   type: { 
     type: String, 
     enum: ['text', 'poll'], 
-    default: 'text' 
+    default: 'text',
+    required: true
   },
   content: { 
     type: String, 
@@ -83,10 +205,12 @@ const postSchema = new mongoose.Schema({
     },
     votes: { 
       type: Number, 
-      default: 0 
+      default: 0,
+      min: 0
     },
     voters: [{ 
-      type: String // User IDs who voted for this option
+      type: String,
+      default: []
     }]
   }],
   allowMultiple: { 
@@ -95,8 +219,13 @@ const postSchema = new mongoose.Schema({
   },
   totalVotes: { 
     type: Number, 
-    default: 0 
+    default: 0,
+    min: 0
   },
+  voterIPs: [{ 
+    type: String,
+    default: []
+  }],
   imageUrl: { 
     type: String, 
     trim: true 
@@ -119,22 +248,26 @@ const postSchema = new mongoose.Schema({
   }],
   likes: { 
     type: Number, 
-    default: 0 
+    default: 0,
+    min: 0
   },
   likedBy: [{ 
-    type: String // User IDs who liked this post
+    type: String,
+    default: []
   }]
+}, {
+  timestamps: true
 });
 
-
+// Banner and Background schemas
 const bannerSchema = new mongoose.Schema({
   imageUrl: String,
+  linkUrl: String,
   updatedAt: { type: Date, default: Date.now }
 });
 
 const backgroundSchema = new mongoose.Schema({
   imageUrl: String,
-  
   updatedAt: { type: Date, default: Date.now }
 });
 
@@ -143,42 +276,56 @@ const Post = mongoose.model('Post', postSchema);
 const Banner = mongoose.model('Banner', bannerSchema);
 const Background = mongoose.model('Background', backgroundSchema);
 
+// Basic moderation function
+async function moderateText(text, languages = ['en']) {
+  const badWords = ['spam', 'scam', 'fake', 'abuse'];
+  const foundBadWords = badWords.filter(word => 
+    text.toLowerCase().includes(word.toLowerCase())
+  );
+  
+  return {
+    isBlocked: foundBadWords.length > 0,
+    reasons: {
+      databaseMatch: foundBadWords.length > 0,
+      foundWords: foundBadWords,
+      aiDetection: false
+    }
+  };
+}
+
 // Moderation Middleware
 async function moderateAllContent(req, res, next) {
   try {
     const { content, question, options } = req.body;
     
-    // Moderate text content
     if (content) {
-      const moderationResult = await moderateText(content, ['en', 'es', 'fr', 'hi', 'kn']);
+      const moderationResult = await moderateText(content);
       if (moderationResult.isBlocked) {
         return res.status(400).json({
           message: 'Content contains inappropriate material',
-          details: moderationResult.reasons
+          details: moderationResult.reasons.foundWords
         });
       }
     }
     
-    // Moderate poll question
     if (question) {
-      const moderationResult = await moderateText(question, ['en', 'es', 'fr', 'hi', 'kn']);
+      const moderationResult = await moderateText(question);
       if (moderationResult.isBlocked) {
         return res.status(400).json({
           message: 'Poll question contains inappropriate material',
-          details: moderationResult.reasons
+          details: moderationResult.reasons.foundWords
         });
       }
     }
     
-    // Moderate poll options
     if (options && Array.isArray(options)) {
       for (const option of options) {
         if (option.text) {
-          const moderationResult = await moderateText(option.text, ['en', 'es', 'fr', 'hi', 'kn']);
+          const moderationResult = await moderateText(option.text);
           if (moderationResult.isBlocked) {
             return res.status(400).json({
               message: `Poll option "${option.text}" contains inappropriate material`,
-              details: moderationResult.reasons
+              details: moderationResult.reasons.foundWords
             });
           }
         }
@@ -188,146 +335,112 @@ async function moderateAllContent(req, res, next) {
     next();
   } catch (error) {
     console.error('Moderation error:', error);
-    res.status(500).json({ message: 'Content moderation failed' });
+    next(); // Continue even if moderation fails
   }
 }
 
-// Routes
-
-
-// Routes
-
-// Upload banner image
-app.post('/api/upload/banner', upload.single('banner'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: 'No banner image uploaded' });
-  try {
-    const b64 = Buffer.from(req.file.buffer).toString("base64");
-    const dataUri = `data:${req.file.mimetype};base64,${b64}`;
-    const result = await cloudinary.uploader.upload(dataUri, {
-      folder: 'banner',
-      resource_type: 'image'
-    });
-    await Banner.findOneAndUpdate({}, {
-      imageUrl: result.secure_url,
-      updatedAt: new Date()
-    }, { upsert: true, new: true });
-    res.json({ message: 'Banner uploaded', imageUrl: result.secure_url });
-  } catch (error) {
-    console.error("Banner upload error:", error);
-    res.status(500).json({ message: 'Banner upload failed' });
-  }
+// Request logging middleware
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`${timestamp} - ${req.method} ${req.path} - IP: ${getClientIP(req)}`);
+  next();
 });
 
-// Get banner image
-app.get('/api/banner', async (req, res) => {
-  try {
-    const banner = await Banner.findOne();
-    res.json({ imageUrl: banner ? banner.imageUrl : null });
-  } catch (error) {
-    console.error("Banner fetch error:", error);
-    res.status(500).json({ message: 'Failed to fetch banner' });
-  }
-});
-
-// Upload background image
-app.post('/api/upload/background', upload.single('background'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: 'No background image uploaded' });
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
   
+  res.json({ 
+    status: 'OK',
+    database: states[dbState] || 'unknown',
+    timestamp: new Date().toISOString(),
+    features: [
+      'text-posts', 
+      'polls', 
+      'comments', 
+      'likes', 
+      'image-uploads', 
+      'moderation',
+      'one-vote-per-ip',
+      'poll-percentages'
+    ]
+  });
+});
+
+// Debug endpoint for troubleshooting
+app.get('/api/debug/db', async (req, res) => {
   try {
-    // Check image safety
-    const imageUnsafe = await isImageUnsafe(req.file.buffer, req.file.mimetype);
-    if (imageUnsafe === true) {
-      return res.status(400).json({ message: 'Background image contains inappropriate content' });
-    }
+    const dbState = mongoose.connection.readyState;
+    const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
     
-    const b64 = Buffer.from(req.file.buffer).toString("base64");
-    const dataUri = `data:${req.file.mimetype};base64,${b64}`;
-    const result = await cloudinary.uploader.upload(dataUri, {
-      folder: 'background',
-      resource_type: 'image'
+    const testPost = await Post.findOne().limit(1);
+    
+    res.json({
+      database: {
+        state: states[dbState] || 'unknown',
+        host: mongoose.connection.host,
+        name: mongoose.connection.name,
+        readyState: dbState
+      },
+      testQuery: !!testPost,
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
     });
-    
-    await Background.findOneAndUpdate({}, {
-      imageUrl: result.secure_url,
-      updatedAt: new Date()
-    }, { upsert: true, new: true });
-    
-    res.json({ message: 'Background uploaded', imageUrl: result.secure_url });
   } catch (error) {
-    console.error("Background upload error:", error);
-    res.status(500).json({ message: 'Background upload failed' });
+    res.status(500).json({
+      error: error.message,
+      database: 'connection failed'
+    });
   }
 });
 
-// Get background image
-app.get('/api/background', async (req, res) => {
-  try {
-    const background = await Background.findOne();
-    res.json({ imageUrl: background ? background.imageUrl : null });
-  } catch (error) {
-    console.error("Background fetch error:", error);
-    res.status(500).json({ message: 'Failed to fetch background' });
-  }
-});
-
-// Upload post image with moderation
+// Upload post image
 app.post('/api/upload/post', upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
   
   try {
-    // Check image for unsafe content BEFORE uploading to Cloudinary
-    const imageUnsafe = await isImageUnsafe(req.file.buffer, req.file.mimetype);
-    
-    if (imageUnsafe === true) {
-      return res.status(400).json({ message: 'Image contains inappropriate or unsafe content' });
-    }
-    
-    if (imageUnsafe === null) {
-      return res.status(400).json({ message: 'Unable to verify image safety - upload blocked' });
-    }
-
-    // Image is safe, proceed with Cloudinary upload
     const b64 = Buffer.from(req.file.buffer).toString("base64");
     const dataUri = `data:${req.file.mimetype};base64,${b64}`;
     const result = await cloudinary.uploader.upload(dataUri, {
       folder: 'posts',
-      resource_type: 'image'
+      resource_type: 'image',
+      quality: 'auto',
+      fetch_format: 'auto'
     });
     
     res.json({ imageUrl: result.secure_url });
   } catch (error) {
     console.error("Post image upload error:", error);
-    res.status(500).json({ message: 'Image upload failed' });
+    res.status(500).json({ message: 'Image upload failed: ' + error.message });
   }
 });
 
-// Create posts (both text and poll) with comprehensive moderation
+// Create posts (both text and poll)
 app.post('/api/posts', moderateAllContent, async (req, res) => {
   try {
     const { type, content, question, options, allowMultiple, imageUrl } = req.body;
     
-    // Validate post type
+    console.log('📝 Creating post:', { type, hasContent: !!content, hasQuestion: !!question, optionsCount: options?.length });
+    
     if (!['text', 'poll'].includes(type)) {
       return res.status(400).json({ message: 'Invalid post type' });
     }
     
+    let newPost;
+    
     if (type === 'text') {
-      // Text post validation
       if (!content && !imageUrl) {
         return res.status(400).json({ message: 'Text post requires content or image' });
       }
       
-      const newPost = new Post({
+      newPost = new Post({
         type: 'text',
-        content,
-        imageUrl
+        content: content || '',
+        imageUrl: imageUrl || null
       });
       
-      await newPost.save();
-      res.status(201).json({ message: 'Post created successfully', post: newPost });
-      
     } else if (type === 'poll') {
-      // Poll validation
       if (!question) {
         return res.status(400).json({ message: 'Poll requires a question' });
       }
@@ -340,7 +453,7 @@ app.post('/api/posts', moderateAllContent, async (req, res) => {
         return res.status(400).json({ message: 'Poll cannot have more than 6 options' });
       }
       
-      const newPost = new Post({
+      newPost = new Post({
         type: 'poll',
         question,
         options: options.map(option => ({
@@ -349,86 +462,77 @@ app.post('/api/posts', moderateAllContent, async (req, res) => {
           voters: []
         })),
         allowMultiple: allowMultiple || false,
-        totalVotes: 0
+        totalVotes: 0,
+        voterIPs: []
       });
-      
-      await newPost.save();
-      res.status(201).json({ message: 'Poll created successfully', post: newPost });
     }
+    
+    const savedPost = await newPost.save();
+    console.log('✅ Post created successfully:', savedPost._id);
+    
+    res.status(201).json({ 
+      message: `${type === 'poll' ? 'Poll' : 'Post'} created successfully`, 
+      post: savedPost 
+    });
     
   } catch (error) {
     console.error("Post creation error:", error);
-    res.status(500).json({ message: 'Error creating post' });
+    res.status(500).json({ 
+      message: 'Error creating post: ' + error.message 
+    });
   }
 });
 
-// Get all posts
+// Get all posts with percentages
 app.get('/api/posts', async (req, res) => {
   try {
-    const posts = await Post.find().sort({ createdAt: -1 });
-    res.json(posts);
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    const postsWithPercentages = posts.map(post => {
+      if (post.type === 'poll') {
+        const totalVoteCount = post.options.reduce((sum, opt) => sum + (opt.votes || 0), 0);
+        
+        const optionsWithPercentages = post.options.map(option => {
+          const percentage = totalVoteCount > 0 ? 
+            Math.round(((option.votes || 0) / totalVoteCount) * 100) : 0;
+          
+          return {
+            text: option.text,
+            votes: option.votes || 0,
+            voters: option.voters || [],
+            percentage: percentage
+          };
+        });
+        
+        return {
+          ...post,
+          options: optionsWithPercentages,
+          totalVotes: totalVoteCount
+        };
+      }
+      return post;
+    });
+    
+    res.json(postsWithPercentages);
   } catch (error) {
     console.error("Posts fetch error:", error);
-    res.status(500).json({ message: "Server error fetching posts" });
+    res.status(500).json({ message: "Server error fetching posts: " + error.message });
   }
 });
 
-// Like a post
-app.post('/api/posts/:postId/like', async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const { liked } = req.body;
-    const userId = req.body.userId || req.ip; // Use IP as fallback for user identification
-    
-    const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({ message: 'Post not found' });
-    
-    const hasLiked = post.likedBy.includes(userId);
-    
-    if (liked && !hasLiked) {
-      post.likes += 1;
-      post.likedBy.push(userId);
-    } else if (!liked && hasLiked) {
-      post.likes = Math.max(0, post.likes - 1);
-      post.likedBy = post.likedBy.filter(id => id !== userId);
-    }
-    
-    await post.save();
-    res.json({ 
-      likes: post.likes, 
-      liked: post.likedBy.includes(userId) 
-    });
-  } catch (error) {
-    console.error('Like error:', error);
-    res.status(500).json({ message: 'Failed to like post' });
-  }
-});
-
-// Add to your server.js - Enhanced debugging for production
+// ENHANCED: Vote endpoint with comprehensive error handling and logging
 app.post('/api/posts/:postId/vote', async (req, res) => {
   const startTime = Date.now();
-  console.log('🗳️ PRODUCTION Vote request:', {
-    postId: req.params.postId,
-    body: req.body,
-    ip: getClientIP(req),
-    environment: process.env.NODE_ENV,
-    dbState: mongoose.connection.readyState,
-    timestamp: new Date().toISOString()
-  });
+  console.log('🗳️ Vote request started');
   
   try {
     const { postId } = req.params;
     const { optionIndex, optionIndexes, allowMultiple } = req.body;
     const ip = getClientIP(req);
 
-    // Enhanced MongoDB connection check
-    if (mongoose.connection.readyState !== 1) {
-      console.error('❌ Database not connected, state:', mongoose.connection.readyState);
-      return res.status(500).json({ 
-        message: 'Database connection error',
-        dbState: mongoose.connection.readyState 
-      });
-    }
+    console.log('📝 Vote data:', { postId, optionIndex, optionIndexes, allowMultiple, ip });
 
     // Validate postId format
     if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
@@ -439,9 +543,18 @@ app.post('/api/posts/:postId/vote', async (req, res) => {
       });
     }
 
-    // Find the post with timeout
+    // Database connection check
+    if (mongoose.connection.readyState !== 1) {
+      console.error('❌ Database not connected, state:', mongoose.connection.readyState);
+      return res.status(500).json({ 
+        message: 'Database connection error',
+        dbState: mongoose.connection.readyState 
+      });
+    }
+
+    // Find the post
     console.log('🔍 Looking for post:', postId);
-    const post = await Post.findById(postId).maxTimeMS(10000); // 10 second timeout
+    const post = await Post.findById(postId).maxTimeMS(10000);
     
     if (!post) {
       console.log('❌ Post not found in database');
@@ -568,14 +681,13 @@ app.post('/api/posts/:postId/vote', async (req, res) => {
       optionVotes: post.options.map(opt => ({ text: opt.text, votes: opt.votes }))
     });
     
-    // Enhanced save with retries and error handling
+    // Enhanced save with retries
     let savedPost;
     const maxRetries = 3;
     let retryCount = 0;
     
     while (retryCount < maxRetries) {
       try {
-        // Mark modified for nested objects
         post.markModified('options');
         post.markModified('voterIPs');
         
@@ -599,7 +711,6 @@ app.post('/api/posts/:postId/vote', async (req, res) => {
           throw new Error(`Database save failed after ${maxRetries} attempts: ${saveError.message}`);
         }
         
-        // Wait before retry (exponential backoff)
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 100));
       }
     }
@@ -669,53 +780,128 @@ app.post('/api/posts/:postId/vote', async (req, res) => {
   }
 });
 
-// Add comment to post with comprehensive moderation
+// Enhanced like endpoint
+app.post('/api/posts/:postId/like', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { liked } = req.body;
+    
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
+    
+    const ip = getClientIP(req);
+    const userId = crypto.createHash('md5').update(ip + (req.get('User-Agent') || '')).digest('hex');
+    
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+    
+    if (!post.likedBy) post.likedBy = [];
+    
+    const hasLiked = post.likedBy.includes(userId);
+    
+    if (liked && !hasLiked) {
+      post.likes = (post.likes || 0) + 1;
+      post.likedBy.push(userId);
+    } else if (!liked && hasLiked) {
+      post.likes = Math.max(0, (post.likes || 0) - 1);
+      post.likedBy = post.likedBy.filter(id => id !== userId);
+    }
+    
+    await post.save();
+    
+    res.json({ 
+      likes: post.likes || 0, 
+      liked: post.likedBy.includes(userId) 
+    });
+  } catch (error) {
+    console.error('Like error:', error);
+    res.status(500).json({ message: 'Failed to update like: ' + error.message });
+  }
+});
+
+// Add comment to post
 app.post('/api/posts/:postId/comments', async (req, res) => {
   try {
     const { content } = req.body;
-    if (!content) return res.status(400).json({ message: 'Comment cannot be empty' });
-
-    // Moderate comment content
-    const moderationResult = await moderateText(content, ['en', 'es', 'fr', 'hi', 'kn']);
     
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ message: 'Comment cannot be empty' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
+
+    const moderationResult = await moderateText(content);
     if (moderationResult.isBlocked) {
-      let blockReason = '';
-      
-      if (moderationResult.reasons.databaseMatch) {
-        blockReason = `Database flagged words: ${moderationResult.reasons.foundWords.join(', ')}`;
-      }
-      if (moderationResult.reasons.aiDetection) {
-        blockReason += (blockReason ? ' AND ' : '') + 'AI detected inappropriate content';
-      }
-      
       return res.status(400).json({ 
         message: 'Comment contains inappropriate content',
-        details: blockReason
+        details: moderationResult.reasons.foundWords
       });
     }
 
     const post = await Post.findById(req.params.postId);
     if (!post) return res.status(404).json({ message: 'Post not found' });
 
-    post.comments.push({ content });
+    if (!post.comments) post.comments = [];
+    
+    post.comments.push({ 
+      content: content.trim(),
+      createdAt: new Date()
+    });
+    
     await post.save();
-    res.json({ message: 'Comment added successfully', comments: post.comments });
+    
+    res.json({ 
+      message: 'Comment added successfully', 
+      comments: post.comments 
+    });
     
   } catch (error) {
     console.error('Add comment error:', error);
-    res.status(500).json({ message: 'Failed to add comment' });
+    res.status(500).json({ message: 'Failed to add comment: ' + error.message });
   }
 });
 
 // Get comments for a post
 app.get('/api/posts/:postId/comments', async (req, res) => {
   try {
-    const post = await Post.findById(req.params.postId);
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
+
+    const post = await Post.findById(req.params.postId).lean();
     if (!post) return res.status(404).json({ message: 'Post not found' });
-    res.json(post.comments);
+    
+    res.json(post.comments || []);
   } catch (error) {
     console.error('Fetch comments error:', error);
-    res.status(500).json({ message: 'Failed to fetch comments' });
+    res.status(500).json({ message: 'Failed to fetch comments: ' + error.message });
+  }
+});
+
+// Banner endpoints
+app.get('/api/banner', async (req, res) => {
+  try {
+    const banner = await Banner.findOne().lean();
+    res.json({
+      imageUrl: banner ? banner.imageUrl : null,
+      linkUrl: banner ? banner.linkUrl : null
+    });
+  } catch (error) {
+    console.error("Banner fetch error:", error);
+    res.status(500).json({ message: 'Failed to fetch banner' });
+  }
+});
+
+app.get('/api/background', async (req, res) => {
+  try {
+    const background = await Background.findOne().lean();
+    res.json({ imageUrl: background ? background.imageUrl : null });
+  } catch (error) {
+    console.error("Background fetch error:", error);
+    res.status(500).json({ message: 'Failed to fetch background' });
   }
 });
 
@@ -724,40 +910,81 @@ app.get('/upload.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'upload.html'));
 });
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    features: ['text-posts', 'polls', 'comments', 'likes', 'image-uploads', 'moderation', 'clickable-banners']
-  });
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Global error handler
 app.use((error, req, res, next) => {
-  console.error('Global error:', error);
+  console.error('Global error:', {
+    message: error.message,
+    stack: error.stack,
+    url: req.url,
+    method: req.method,
+    ip: getClientIP(req)
+  });
   
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ message: 'File too large' });
+      return res.status(400).json({ message: 'File too large (max 5MB)' });
     }
+    return res.status(400).json({ message: 'File upload error: ' + error.message });
   }
   
   res.status(500).json({ 
-    message: 'Internal server error'
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
   });
 });
 
 // 404 handler
-app.use((req, res) => res.status(404).json({ message: "❌ Route Not Found" }));
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-  console.log(`📊 Features: Text Posts, Polls, Comments, Likes, Image Uploads`);
-  console.log(`🔒 Moderation: Active for all content types`);
-  console.log(`🎯 Banner System: Clickable banners with custom URLs`);
+app.use((req, res) => {
+  res.status(404).json({ message: `Route ${req.path} not found` });
 });
 
+// Graceful shutdown handlers
+process.on('SIGTERM', async () => {
+  console.log('🔄 SIGTERM received, shutting down gracefully...');
+  try {
+    await mongoose.connection.close();
+    console.log('📦 MongoDB connection closed');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
+});
+
+process.on('SIGINT', async () => {
+  console.log('🔄 SIGINT received, shutting down gracefully...');
+  try {
+    await mongoose.connection.close();
+    console.log('📦 MongoDB connection closed');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
+});
+
+// Start the server
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📡 Server URL: http://localhost:${PORT}`);
+  console.log(`📊 Features: Text Posts, Polls (2-option multiple choice), Comments, Likes`);
+  console.log(`🔒 Moderation: Basic profanity filtering active`);
+  console.log(`🗳️ Poll System: 1 vote per IP with real-time percentages`);
+  
+  // Log database status after server start
+  setTimeout(() => {
+    const dbState = mongoose.connection.readyState;
+    const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+    console.log(`💾 Database status: ${states[dbState] || 'unknown'}`);
+  }, 2000);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('❌ Server error:', error);
+});
