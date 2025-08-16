@@ -23,7 +23,7 @@ function updateThemeUI() {
   if (!themeToggle) return;
   
   const icon = themeToggle.querySelector('i');
-  const textNode = themeToggle.childNodes[2]; // Get the text node after the icon
+  const textNode = themeToggle.childNodes[2];
   
   if (icon) {
     icon.className = isDark ? 'fa-solid fa-sun w-6 text-xl' : 'fa-solid fa-moon w-6 text-xl';
@@ -45,7 +45,6 @@ function toggleMenu() {
   const isOpen = menu.classList.contains("translate-x-0");
   
   if (isOpen) {
-    // Close menu
     menu.classList.remove("translate-x-0");
     menu.classList.add("translate-x-full");
     overlay.classList.remove("opacity-100", "visible");
@@ -54,14 +53,12 @@ function toggleMenu() {
     hamburger?.setAttribute("aria-expanded", "false");
     document.body.style.overflow = "auto";
     
-    // Reset menu items
     const menuItems = document.querySelectorAll(".menu-item");
     menuItems.forEach(item => {
       item.classList.remove("opacity-100", "translate-x-0");
       item.classList.add("opacity-0", "translate-x-8");
     });
   } else {
-    // Open menu
     menu.classList.remove("translate-x-full");
     menu.classList.add("translate-x-0");
     overlay.classList.remove("opacity-0", "invisible");
@@ -70,7 +67,6 @@ function toggleMenu() {
     hamburger?.setAttribute("aria-expanded", "true");
     document.body.style.overflow = "hidden";
     
-    // Animate menu items
     const menuItems = document.querySelectorAll(".menu-item");
     menuItems.forEach(item => {
       item.classList.remove("opacity-0", "translate-x-8");
@@ -102,11 +98,9 @@ function switchToTextPost() {
   const textSection = document.getElementById('textPostSection');
   const pollSection = document.getElementById('pollSection');
   
-  // Update button states with proper Tailwind classes
   textToggle.className = 'tab-button flex-1 px-6 py-3 rounded-lg font-semibold bg-blue-500 text-white shadow-md -translate-y-0.5';
   pollToggle.className = 'tab-button flex-1 px-6 py-3 rounded-lg font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500';
   
-  // Update sections
   if (textSection && pollSection) {
     textSection.classList.remove('opacity-0', 'translate-y-2', 'pointer-events-none', 'absolute', 'top-0', 'left-0', 'right-0');
     textSection.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'relative');
@@ -115,7 +109,6 @@ function switchToTextPost() {
     pollSection.classList.add('opacity-0', 'translate-y-2', 'pointer-events-none', 'absolute', 'top-0', 'left-0', 'right-0');
   }
   
-  // Update ARIA attributes
   textToggle.setAttribute('aria-selected', 'true');
   pollToggle.setAttribute('aria-selected', 'false');
 }
@@ -127,11 +120,9 @@ function switchToPollPost() {
   const textSection = document.getElementById('textPostSection');
   const pollSection = document.getElementById('pollSection');
   
-  // Update button states with proper Tailwind classes
   pollToggle.className = 'tab-button flex-1 px-6 py-3 rounded-lg font-semibold bg-blue-500 text-white shadow-md -translate-y-0.5';
   textToggle.className = 'tab-button flex-1 px-6 py-3 rounded-lg font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500';
   
-  // Update sections
   if (textSection && pollSection) {
     pollSection.classList.remove('opacity-0', 'translate-y-2', 'pointer-events-none', 'absolute', 'top-0', 'left-0', 'right-0');
     pollSection.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'relative');
@@ -140,7 +131,6 @@ function switchToPollPost() {
     textSection.classList.add('opacity-0', 'translate-y-2', 'pointer-events-none', 'absolute', 'top-0', 'left-0', 'right-0');
   }
   
-  // Update ARIA attributes
   pollToggle.setAttribute('aria-selected', 'true');
   textToggle.setAttribute('aria-selected', 'false');
 }
@@ -186,7 +176,7 @@ function initPollFunctions() {
   }
 }
 
-// User ID Management for Voting (kept for likes)
+// User ID Management
 function getUserIdForVoting() {
   let userId = localStorage.getItem('userId');
   if (!userId) {
@@ -254,7 +244,6 @@ async function submitPost(postData) {
   const spinner = submitButton.querySelector('.submit-spinner');
   
   try {
-    // Show loading state
     submitButton.disabled = true;
     originalText.classList.add('hidden');
     spinner.classList.remove('hidden');
@@ -266,7 +255,6 @@ async function submitPost(postData) {
     });
     
     if (response.ok) {
-      // Reset forms
       if (postData.type === 'text') {
         document.getElementById('postContent').value = '';
         selectedImage = null;
@@ -277,15 +265,11 @@ async function submitPost(postData) {
         document.getElementById('allowMultiple').checked = false;
       }
       
-      // Close modal
       document.getElementById("createPost").classList.add("hidden");
       document.getElementById("add").classList.add("hidden");
       document.body.style.overflow = "auto";
       
-      // Refresh posts
       fetchPosts();
-      
-      // Show success message
       showAlert('Your post has been shared anonymously!', 'success');
     } else {
       const error = await response.json();
@@ -295,7 +279,6 @@ async function submitPost(postData) {
     console.error("Post submission error:", error);
     showAlert("Failed to submit post. Please check your connection.", 'error');
   } finally {
-    // Reset loading state
     submitButton.disabled = false;
     originalText.classList.remove('hidden');
     spinner.classList.add('hidden');
@@ -325,10 +308,7 @@ async function fetchPosts() {
       }
     }).join('');
     
-    // Add event listeners after rendering
     addPostEventListeners();
-    
-    // Add read more functionality for long captions
     addReadMore('.caption-text');
     
   } catch (error) {
@@ -337,7 +317,6 @@ async function fetchPosts() {
   }
 }
 
-// Show empty state when no posts
 function showEmptyState() {
   const postsContainer = document.getElementById('postsContainer');
   if (!postsContainer) return;
@@ -356,7 +335,6 @@ function showEmptyState() {
   `;
 }
 
-// Show error state when fetch fails
 function showErrorState() {
   const postsContainer = document.getElementById('postsContainer');
   if (!postsContainer) return;
@@ -375,20 +353,16 @@ function showErrorState() {
   `;
 }
 
-// Add event listeners to posts
 function addPostEventListeners() {
-  // Like buttons
   document.querySelectorAll('.like-btn').forEach(function(button) {
     button.addEventListener('click', handleLike);
   });
   
-  // Poll voting
   document.querySelectorAll('.poll-option').forEach(function(option) {
     option.addEventListener('click', handlePollVote);
   });
 }
 
-// Create Text Post HTML
 function createTextPostHTML(post) {
   const userId = getUserIdForVoting();
   const isLiked = post.likedBy && post.likedBy.includes(userId);
@@ -445,35 +419,74 @@ function createTextPostHTML(post) {
     </div>
   `;
 }
-// UPDATED: Create Poll HTML with COMPACT SIZE and Scrolling
+
+// UPDATED: Compact Poll HTML with Proper Single/Multiple Logic
 function createPollHTML(post) {
+  const userVotes = JSON.parse(localStorage.getItem(`poll_${post._id}_votes`)) || [];
+  const hasVoted = localStorage.getItem(`poll_${post._id}_voted`) === 'true';
+  
   return `
-    <div class="rounded-xl shadow-md mb-4 bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300 hover:shadow-lg poll-compact mx-auto">
+    <div class="rounded-xl shadow-md mb-6 bg-white dark:bg-gray-800 p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300 hover:shadow-lg max-w-md mx-auto">
       <div class="flex items-center mb-3 space-x-2">
-        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-          <i class="fas fa-poll text-white text-sm"></i>
+        <div class="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+          <i class="fas fa-poll text-white text-xs"></i>
         </div>
         <div class="flex-1">
           <h1 class="font-poppins text-gray-900 dark:text-white font-medium text-sm">Anonymous Poll</h1>
           <span class="text-gray-500 dark:text-gray-400 text-xs">${getDetailedTimeAgo(post.createdAt)}</span>
         </div>
       </div>
-      <h3 class="font-medium text-base text-gray-900 dark:text-white mb-3 caption-text">${escapeHtml(post.question)}</h3>
+      <h3 class="font-medium text-sm text-gray-900 dark:text-white mb-3 caption-text">${escapeHtml(post.question)}</h3>
       
-      <!-- COMPACT SCROLLABLE OPTIONS -->
-      <div class="space-y-2 mb-3 poll-options-container overflow-y-auto scrollbar-thin pr-1" id="poll-${post._id}">
+      <!-- VOTING INSTRUCTIONS -->
+      ${!hasVoted ? (post.allowMultiple ? `
+        <div class="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <p class="text-xs text-blue-700 dark:text-blue-300 font-medium">
+            <i class="fas fa-hand-pointer mr-1"></i>
+            Multiple Choice: Select exactly 2 options, then vote
+          </p>
+        </div>
+      ` : `
+        <div class="mb-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+          <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">
+            <i class="fas fa-mouse-pointer mr-1"></i>
+            Single Choice: Click one option to vote immediately
+          </p>
+        </div>
+      `) : `
+        <div class="mb-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+          <p class="text-xs text-green-700 dark:text-green-300 font-medium">
+            <i class="fas fa-check-circle mr-1"></i>
+            You voted! (${post.allowMultiple ? 'Multi' : 'Single'} choice - ${userVotes.length} selected)
+          </p>
+        </div>
+      `}
+      
+      <!-- COMPACT OPTIONS -->
+      <div class="space-y-2 mb-3" id="poll-${post._id}">
         ${post.options.map(function(option, index) {
           const percentage = option.percentage || 0;
           const isWinning = percentage > 0 && percentage === Math.max(...post.options.map(o => o.percentage || 0));
+          const isSelected = userVotes.includes(index);
+          const isDisabled = hasVoted;
           
           return `
-            <div class="poll-option cursor-pointer p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-sm" 
+            <div class="poll-option ${isDisabled ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'} p-2 border border-gray-200 dark:border-gray-600 rounded-lg ${!isDisabled ? 'hover:bg-gray-50 dark:hover:bg-gray-700' : ''} transition-all duration-300 ${!isDisabled ? 'transform hover:-translate-y-0.5 hover:shadow-sm' : ''} ${isSelected ? (hasVoted ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-900' : 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900') : ''}" 
                  data-post-id="${post._id}" 
                  data-option="${index}" 
-                 data-allow-multiple="${post.allowMultiple}">
+                 data-allow-multiple="${post.allowMultiple}"
+                 ${isDisabled ? 'style="pointer-events: none;"' : ''}>
               <div class="flex items-center justify-between mb-1">
                 <span class="text-gray-900 dark:text-white font-medium flex items-center text-xs">
-                  ${isWinning && percentage > 0 ? '<i class="fas fa-crown text-yellow-500 mr-1 text-xs" title="Leading option"></i>' : ''}
+                  ${hasVoted && isSelected ? '<i class="fas fa-check-circle text-green-500 mr-1 text-xs" title="Your vote"></i>' : 
+                    (post.allowMultiple ? 
+                      (isSelected ? '<i class="fas fa-check-square text-blue-500 mr-1 text-xs" title="Selected"></i>' : 
+                       '<i class="far fa-square text-gray-400 mr-1 text-xs" title="Click to select"></i>') :
+                      (isSelected ? '<i class="fas fa-dot-circle text-blue-500 mr-1 text-xs" title="Your vote"></i>' : 
+                       '<i class="far fa-circle text-gray-400 mr-1 text-xs" title="Click to vote"></i>')
+                    )
+                  }
+                  ${isWinning && percentage > 0 ? '<i class="fas fa-crown text-yellow-500 mr-1 text-xs" title="Leading"></i>' : ''}
                   ${escapeHtml(option.text)}
                 </span>
                 <div class="text-right">
@@ -481,8 +494,8 @@ function createPollHTML(post) {
                 </div>
               </div>
               <div class="mb-1">
-                <div class="bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 overflow-hidden">
-                  <div class="poll-results h-1.5 rounded-full transition-all duration-1000 ease-out ${
+                <div class="bg-gray-200 dark:bg-gray-600 rounded-full h-1 overflow-hidden">
+                  <div class="poll-results h-1 rounded-full transition-all duration-1000 ease-out ${
                     isWinning ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-blue-500'
                   }" style="width: ${percentage}%"></div>
                 </div>
@@ -496,136 +509,275 @@ function createPollHTML(post) {
         }).join('')}
       </div>
       
+      <!-- VOTE BUTTON FOR MULTIPLE CHOICE ONLY -->
+      ${post.allowMultiple && !hasVoted ? `
+        <div class="mb-3">
+          <button id="voteButton-${post._id}" onclick="submitMultipleVote('${post._id}')" 
+                  class="w-full bg-gray-400 cursor-not-allowed text-white py-2 px-4 rounded-lg font-medium text-sm transition-colors"
+                  disabled>
+            <i class="fas fa-vote-yea mr-2"></i>Vote (Select exactly 2 options)
+          </button>
+        </div>
+      ` : ''}
+      
       <!-- COMPACT FOOTER -->
       <div class="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-blue-900/20 rounded-lg p-2 border border-gray-200 dark:border-blue-800">
         <div class="flex items-center justify-between">
           <span class="font-medium">Votes: <span class="total-votes text-blue-600 dark:text-blue-400">${post.totalVotes || 0}</span></span>
           <div class="flex items-center space-x-2">
-            ${post.allowMultiple ? '<span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1 py-0.5 rounded">Multi</span>' : '<span class="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1 py-0.5 rounded">Single</span>'}
+            ${post.allowMultiple ? '<span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1 py-0.5 rounded">Multi (2)</span>' : '<span class="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1 py-0.5 rounded">Single</span>'}
             <span class="text-xs"><i class="fas fa-shield-alt mr-1"></i>1 vote/IP</span>
           </div>
         </div>
-        ${post.options.length > 4 ? '<div class="mt-1 text-xs text-gray-400 dark:text-gray-500"><i class="fas fa-arrows-alt-v mr-1"></i>Scroll for more options</div>' : ''}
       </div>
     </div>
   `;
 }
 
-// UPDATED: Enhanced Poll Voting with One Vote per IP
+// FIXED: Enhanced Poll Voting - Single Vote for Single, Multi Vote for Multi
 async function handlePollVote(event) {
   const option = event.currentTarget;
   const postId = option.dataset.postId;
   const optionIndex = parseInt(option.dataset.option);
   const allowMultiple = option.dataset.allowMultiple === 'true';
   
-  // Prevent multiple rapid clicks
   if (option.classList.contains('voting')) return;
+  
+  // Check if already voted
+  const hasVoted = localStorage.getItem(`poll_${postId}_voted`) === 'true';
+  if (hasVoted) {
+    showAlert('You have already voted in this poll!', 'warning');
+    return;
+  }
+  
   option.classList.add('voting');
   
   try {
-    let requestBody;
-    
     if (allowMultiple) {
-      // For multiple selection polls, collect all selected options
+      // MULTIPLE CHOICE: Handle selection (exactly 2 required for final submission)
       const pollContainer = document.getElementById(`poll-${postId}`);
       const allOptions = pollContainer.querySelectorAll('.poll-option');
       let selectedOptions = [];
       
-      // Check which options user wants to select
+      // Get currently selected options from UI state
       allOptions.forEach((opt, idx) => {
-        if (idx === optionIndex || opt.classList.contains('user-selected')) {
+        if (opt.classList.contains('ring-2') && opt.classList.contains('ring-blue-500')) {
           selectedOptions.push(idx);
         }
       });
       
-      // Toggle current selection
-      if (selectedOptions.includes(optionIndex)) {
+      console.log('Multi-choice - Current selections before toggle:', selectedOptions);
+      
+      // Toggle current option
+      const isCurrentlySelected = selectedOptions.includes(optionIndex);
+      
+      if (isCurrentlySelected) {
+        // Deselect this option
         selectedOptions = selectedOptions.filter(idx => idx !== optionIndex);
-      } else {
-        selectedOptions.push(optionIndex);
-      }
-      
-      if (selectedOptions.length === 0) {
-        showAlert('Please select at least one option for multiple choice polls.', 'warning');
-        return;
-      }
-      
-      requestBody = {
-        optionIndexes: selectedOptions,
-        allowMultiple: true
-      };
-    } else {
-      // Single selection
-      requestBody = {
-        optionIndex: optionIndex,
-        allowMultiple: false
-      };
-    }
-
-    const response = await fetch(`/api/posts/${postId}/vote`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody)
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      if (data.alreadyVoted) {
-        showAlert('You have already voted in this poll! Only one vote per person is allowed.', 'warning');
-        // Mark the poll as already voted
-        const pollContainer = document.getElementById(`poll-${postId}`);
-        if (pollContainer) {
-          pollContainer.parentElement.classList.add('opacity-75');
-          pollContainer.querySelectorAll('.poll-option').forEach(opt => {
-            opt.classList.remove('cursor-pointer');
-            opt.classList.add('cursor-not-allowed');
-            opt.style.pointerEvents = 'none';
-          });
+        option.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-900');
+        
+        // Update icon to unselected
+        const icon = option.querySelector('.fa-check-square');
+        if (icon) {
+          icon.classList.remove('fa-check-square', 'text-blue-500');
+          icon.classList.add('fa-square', 'text-gray-400');
+          icon.title = 'Click to select';
         }
-        return;
+      } else {
+        // Select this option (but check limit)
+        if (selectedOptions.length >= 2) {
+          showAlert('You can only select up to 2 options! Deselect one first.', 'warning');
+          option.classList.remove('voting');
+          return;
+        }
+        
+        selectedOptions.push(optionIndex);
+        option.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-900');
+        
+        // Update icon to selected
+        const icon = option.querySelector('.fa-square');
+        if (icon) {
+          icon.classList.remove('fa-square', 'text-gray-400');
+          icon.classList.add('fa-check-square', 'text-blue-500');
+          icon.title = 'Selected';
+        }
       }
-      throw new Error(data.message || 'Failed to vote');
-    }
-    
-    // Update the poll UI with new data including percentages
-    updatePollUIWithPercentages(postId, data.post);
-    
-    // Disable further voting on this poll
-    const pollContainer = document.getElementById(`poll-${postId}`);
-    if (pollContainer) {
-      pollContainer.querySelectorAll('.poll-option').forEach(opt => {
-        opt.classList.remove('cursor-pointer');
-        opt.classList.add('cursor-not-allowed');
-        opt.style.pointerEvents = 'none';
-      });
-    }
-    
-    // Show success message with leading option info
-    if (data.leadingOptions && data.leadingOptions.length > 0) {
-      const leadingText = data.leadingOptions.length === 1 ? 
-        `"${data.leadingOptions[0].text}" is leading with ${data.leadingOptions.percentage}%!` :
-        `Multiple options tied at ${data.leadingOptions.percentage}%!`;
-      showAlert(`✅ Vote recorded! ${leadingText}`, 'success');
+      
+      console.log('Multi-choice - Selections after toggle:', selectedOptions);
+      
+      // Update vote button state
+      const voteButton = document.getElementById(`voteButton-${postId}`);
+      if (voteButton) {
+        if (selectedOptions.length === 2) {
+          voteButton.disabled = false;
+          voteButton.innerHTML = '<i class="fas fa-vote-yea mr-2"></i>Vote Now (2 options selected)';
+          voteButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
+          voteButton.classList.add('bg-blue-500', 'hover:bg-blue-600', 'cursor-pointer');
+        } else {
+          voteButton.disabled = true;
+          voteButton.innerHTML = `<i class="fas fa-vote-yea mr-2"></i>Vote (Select ${2 - selectedOptions.length} more)`;
+          voteButton.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'cursor-pointer');
+          voteButton.classList.add('bg-gray-400', 'cursor-not-allowed');
+        }
+      }
+      
+      option.classList.remove('voting');
+      return; // Don't vote yet - wait for vote button click
+      
     } else {
+      // SINGLE CHOICE: Vote immediately
+      console.log('Single-choice - Voting for option:', optionIndex);
+      
+      const response = await fetch(`/api/posts/${postId}/vote`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ 
+          optionIndex: optionIndex,  // Send single index for single choice
+          allowMultiple: false
+        })
+      });
+
+      console.log('Single-choice - Vote response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Single vote request failed:', errorData);
+        
+        if (errorData.alreadyVoted) {
+          showAlert('You have already voted in this poll!', 'warning');
+          localStorage.setItem(`poll_${postId}_voted`, 'true');
+          disablePoll(postId);
+          return;
+        }
+        
+        throw new Error(errorData.message || `Vote failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Single vote successful:', data);
+      
+      // Mark as voted and save selection
+      localStorage.setItem(`poll_${postId}_voted`, 'true');
+      localStorage.setItem(`poll_${postId}_votes`, JSON.stringify([optionIndex]));
+      
+      // Update UI and disable poll
+      updatePollUIWithPercentages(postId, data.post);
+      disablePoll(postId);
+      
       showAlert('✅ Vote recorded successfully!', 'success');
     }
     
   } catch (error) {
-    console.error('Vote error:', error);
+    console.error('❌ Vote error details:', error);
     showAlert(`❌ Failed to vote: ${error.message}`, 'error');
   } finally {
     option.classList.remove('voting');
   }
 }
 
-// UPDATED: Enhanced Poll UI Update with Percentages
+// Submit Multiple Choice Vote (exactly 2 options)
+async function submitMultipleVote(postId) {
+  const voteButton = document.getElementById(`voteButton-${postId}`);
+  if (!voteButton || voteButton.disabled) return;
+  
+  try {
+    voteButton.disabled = true;
+    voteButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+    
+    // Get selected options
+    const pollContainer = document.getElementById(`poll-${postId}`);
+    const allOptions = pollContainer.querySelectorAll('.poll-option');
+    let selectedOptions = [];
+    
+    allOptions.forEach((opt, idx) => {
+      if (opt.classList.contains('ring-2') && opt.classList.contains('ring-blue-500')) {
+        selectedOptions.push(idx);
+      }
+    });
+    
+    console.log('Multi-choice - Submitting vote for options:', selectedOptions);
+    
+    // Validate exactly 2 options
+    if (selectedOptions.length !== 2) {
+      showAlert('Please select exactly 2 options!', 'warning');
+      voteButton.disabled = false;
+      voteButton.innerHTML = '<i class="fas fa-vote-yea mr-2"></i>Vote (Select exactly 2 options)';
+      return;
+    }
+    
+    const response = await fetch(`/api/posts/${postId}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        optionIndexes: selectedOptions,  // Send array for multiple choice
+        allowMultiple: true
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      if (data.alreadyVoted) {
+        showAlert('You have already voted in this poll!', 'warning');
+        localStorage.setItem(`poll_${postId}_voted`, 'true');
+      } else {
+        throw new Error(data.message || 'Failed to vote');
+      }
+      return;
+    }
+    
+    console.log('✅ Multiple vote successful:', data);
+    
+    // Mark as voted and save selections
+    localStorage.setItem(`poll_${postId}_voted`, 'true');
+    localStorage.setItem(`poll_${postId}_votes`, JSON.stringify(selectedOptions));
+    
+    // Update UI and disable poll
+    updatePollUIWithPercentages(postId, data.post);
+    disablePoll(postId);
+    
+    // Hide vote button
+    voteButton.style.display = 'none';
+    
+    showAlert('✅ Vote recorded! You selected 2 options.', 'success');
+    
+    // Refresh to show final state
+    setTimeout(() => fetchPosts(), 1000);
+    
+  } catch (error) {
+    console.error('Multi-choice vote error:', error);
+    showAlert(`❌ Failed to vote: ${error.message}`, 'error');
+    
+    // Reset button state
+    voteButton.disabled = false;
+    voteButton.innerHTML = '<i class="fas fa-vote-yea mr-2"></i>Vote Now (2 options selected)';
+  }
+}
+
+// Helper function to disable poll after voting
+function disablePoll(postId) {
+  const pollContainer = document.getElementById(`poll-${postId}`);
+  if (pollContainer) {
+    pollContainer.querySelectorAll('.poll-option').forEach(opt => {
+      opt.classList.remove('cursor-pointer');
+      opt.classList.add('cursor-not-allowed', 'opacity-75');
+      opt.style.pointerEvents = 'none';
+    });
+  }
+}
+
+// UPDATED: Poll UI Update with Final State
 function updatePollUIWithPercentages(postId, pollData) {
   const pollContainer = document.getElementById(`poll-${postId}`);
   if (!pollContainer) return;
   
   const options = pollContainer.querySelectorAll('.poll-option');
   const totalVotesSpan = pollContainer.parentElement.querySelector('.total-votes');
+  const userVotes = JSON.parse(localStorage.getItem(`poll_${postId}_votes`)) || [];
+  const hasVoted = localStorage.getItem(`poll_${postId}_voted`) === 'true';
   
   // Find the maximum percentage for highlighting winners
   const maxPercentage = Math.max(...pollData.options.map(opt => opt.percentage || 0));
@@ -637,41 +789,58 @@ function updatePollUIWithPercentages(postId, pollData) {
     
     const votesSpan = optionElement.querySelector('.option-votes');
     const progressBar = optionElement.querySelector('.poll-results');
-    const percentageDiv = optionElement.querySelector('.text-sm');
+    const percentageDiv = optionElement.querySelector('.text-xs');
     
     const percentage = optionData.percentage || 0;
     const isWinning = percentage > 0 && percentage === maxPercentage;
+    const isUserVote = userVotes.includes(index);
     
     // Update vote count
     if (votesSpan) {
-      votesSpan.textContent = `${optionData.votes} vote${optionData.votes !== 1 ? 's' : ''}`;
-      votesSpan.className = `text-sm font-semibold option-votes ${isWinning ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`;
+      votesSpan.textContent = optionData.votes;
+      votesSpan.className = `text-xs font-medium option-votes ${isWinning ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`;
     }
     
     // Update progress bar with animation
     if (progressBar) {
       progressBar.style.width = `${percentage}%`;
-      progressBar.className = `poll-results h-3 rounded-full transition-all duration-1000 ease-out ${
+      progressBar.className = `poll-results h-1 rounded-full transition-all duration-1000 ease-out ${
         isWinning ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-blue-500'
       }`;
+    }
+    
+    // Update option styling for voted state
+    if (hasVoted && isUserVote) {
+      optionElement.classList.remove('ring-blue-500', 'bg-blue-50', 'dark:bg-blue-900');
+      optionElement.classList.add('ring-2', 'ring-green-500', 'bg-green-50', 'dark:bg-green-900');
     }
     
     // Update percentage display
     if (percentageDiv) {
       percentageDiv.innerHTML = `
         <div class="flex justify-between items-center">
-          <div class="text-sm font-bold ${isWinning ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}">${percentage}%</div>
-          ${isWinning && percentage > 0 ? '<span class="text-xs text-yellow-600 dark:text-yellow-400 font-semibold">🏆 LEADING</span>' : ''}
+          <div class="text-xs font-bold ${isWinning ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}">${percentage}%</div>
+          ${isWinning && percentage > 0 ? '<span class="text-xs text-yellow-600 dark:text-yellow-400 font-medium">🏆</span>' : ''}
         </div>
       `;
     }
     
-    // Add crown icon for leading options
+    // Update option text with proper icons
     const optionText = optionElement.querySelector('span');
-    if (optionText && isWinning && percentage > 0) {
-      if (!optionText.querySelector('.fa-crown')) {
-        optionText.innerHTML = '<i class="fas fa-crown text-yellow-500 mr-2" title="Leading option"></i>' + optionText.innerHTML;
+    if (optionText) {
+      const text = optionData.text;
+      let icons = '';
+      
+      if (hasVoted && isUserVote) {
+        icons += '<i class="fas fa-check-circle text-green-500 mr-1 text-xs" title="Your vote"></i>';
       }
+      if (isWinning && percentage > 0) {
+        icons += '<i class="fas fa-crown text-yellow-500 mr-1 text-xs" title="Leading option"></i>';
+      }
+      
+      // Clean up existing icons and add new ones
+      const textOnly = text.replace(/<i[^>]*><\/i>/g, '').trim();
+      optionText.innerHTML = `${icons}${escapeHtml(textOnly)}`;
     }
   });
   
@@ -681,7 +850,7 @@ function updatePollUIWithPercentages(postId, pollData) {
   }
 }
 
-// Like functionality (unchanged)
+// Like functionality
 async function handleLike(event) {
   const button = event.currentTarget;
   const postId = button.getAttribute("data-post-id");
@@ -703,7 +872,6 @@ async function handleLike(event) {
     
     const data = await response.json();
     
-    // Update UI with server response
     likeCountElement.innerText = data.likes;
     button.setAttribute("data-liked", data.liked.toString());
     
@@ -735,7 +903,6 @@ function toggleCommentSection(postId) {
   section.classList.toggle('hidden');
   if (!section.classList.contains('hidden')) {
     fetchComments(postId);
-    // Focus on comment input
     const commentInput = document.getElementById(`commentInput-${postId}`);
     if (commentInput) {
       setTimeout(() => commentInput.focus(), 100);
@@ -767,7 +934,6 @@ async function submitComment(postId) {
     
     const result = await response.json();
     
-    // Add comment to UI
     const commentsContainer = document.getElementById(`commentsContainer-${postId}`);
     if (commentsContainer) {
       const newCommentElement = document.createElement("div");
@@ -784,7 +950,6 @@ async function submitComment(postId) {
       commentsContainer.prepend(newCommentElement);
     }
     
-    // Update comment count
     const commentCountElement = document.querySelector(`[onclick="toggleCommentSection('${postId}')"] .comment-count`);
     if (commentCountElement) {
       const currentCount = parseInt(commentCountElement.textContent) || 0;
@@ -829,7 +994,7 @@ async function fetchComments(postId) {
   }
 }
 
-// Enhanced Time Display Functions
+// Time and utility functions
 function getDetailedTimeAgo(dateString) {
   if (!dateString) return 'just now';
   
@@ -846,11 +1011,11 @@ function getDetailedTimeAgo(dateString) {
     const hours = Math.floor(diffInSeconds / 3600);
     return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
   }
-  if (diffInSeconds < 2592000) { // 30 days
+  if (diffInSeconds < 2592000) {
     const days = Math.floor(diffInSeconds / 86400);
     return `${days} day${days !== 1 ? 's' : ''} ago`;
   }
-  if (diffInSeconds < 31536000) { // 365 days
+  if (diffInSeconds < 31536000) {
     const months = Math.floor(diffInSeconds / 2592000);
     return `${months} month${months !== 1 ? 's' : ''} ago`;
   }
@@ -863,9 +1028,7 @@ function openImageModal(imageUrl) {
   window.open(imageUrl, '_blank');
 }
 
-// Enhanced Alert System with Icons
 function showAlert(message, type = 'info') {
-  // Remove existing alerts
   const existingAlerts = document.querySelectorAll('.alert-message');
   existingAlerts.forEach(alert => alert.remove());
   
@@ -898,7 +1061,6 @@ function showAlert(message, type = 'info') {
   }, 5000);
 }
 
-// Utility Functions
 function escapeHtml(text) {
   const map = {
     '&': '&amp;',
@@ -910,7 +1072,6 @@ function escapeHtml(text) {
   return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
-// Background Loading
 async function loadBackground() {
   try {
     const bgResponse = await fetch(`/api/background?ts=${Date.now()}`);
@@ -929,7 +1090,6 @@ async function loadBackground() {
   }
 }
 
-// Tab Management
 function showTab(tabId) {
   document.querySelectorAll(".tab-section").forEach(function(section) {
     section.classList.add("hidden");
@@ -944,43 +1104,35 @@ function removeImage() {
   document.getElementById('imagePreview').innerHTML = '';
 }
 
-// Read More functionality positioned at end of second line
 function addReadMore(containerSelector, maxLines = 2) {
   const elements = document.querySelectorAll(containerSelector);
   elements.forEach(el => {
-    // Skip if already processed
     if (el.getAttribute('data-read-more-processed')) return;
     
     const lineHeight = parseFloat(getComputedStyle(el).lineHeight);
     const maxHeight = lineHeight * maxLines;
     
     if (el.scrollHeight > maxHeight) {
-      // Store original content
       const originalContent = el.innerHTML;
       const originalText = el.textContent;
       
-      // Calculate approximate character position for 2 lines
-      const approxCharsPerLine = Math.floor(el.offsetWidth / 8); // Rough estimate
+      const approxCharsPerLine = Math.floor(el.offsetWidth / 8);
       const twoLinesChars = approxCharsPerLine * 2;
       
       let truncatedText = originalText.substring(0, twoLinesChars);
       
-      // Find last space to avoid cutting words
       const lastSpaceIndex = truncatedText.lastIndexOf(' ');
       if (lastSpaceIndex > twoLinesChars * 0.8) {
         truncatedText = truncatedText.substring(0, lastSpaceIndex);
       }
       
-      // Create truncated version with inline Read More button
       const truncatedHTML = `${escapeHtml(truncatedText)}... <button class="read-more-btn text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer bg-transparent border-none p-0">Read More</button>`;
       
-      // Set initial state
       el.innerHTML = truncatedHTML;
       el.setAttribute('data-read-more-processed', 'true');
       el.setAttribute('data-original-content', originalContent);
       el.setAttribute('data-expanded', 'false');
       
-      // Add click event listener
       const readMoreBtn = el.querySelector('.read-more-btn');
       if (readMoreBtn) {
         readMoreBtn.addEventListener('click', function(e) {
@@ -990,22 +1142,18 @@ function addReadMore(containerSelector, maxLines = 2) {
           const isExpanded = el.getAttribute('data-expanded') === 'true';
           
           if (isExpanded) {
-            // Collapse
             el.innerHTML = truncatedHTML;
             el.setAttribute('data-expanded', 'false');
             
-            // Re-attach event listener
             const newReadMoreBtn = el.querySelector('.read-more-btn');
             if (newReadMoreBtn) {
               newReadMoreBtn.addEventListener('click', arguments.callee);
             }
           } else {
-            // Expand
             const expandedHTML = `${originalContent} <button class="read-less-btn text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer bg-transparent border-none p-0">Read Less</button>`;
             el.innerHTML = expandedHTML;
             el.setAttribute('data-expanded', 'true');
             
-            // Re-attach event listener for Read Less
             const readLessBtn = el.querySelector('.read-less-btn');
             if (readLessBtn) {
               readLessBtn.addEventListener('click', arguments.callee);
@@ -1017,23 +1165,20 @@ function addReadMore(containerSelector, maxLines = 2) {
   });
 }
 
-// Initialize everything when DOM is loaded
+// Initialize everything
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 UniSphere initialized with one-vote-per-IP polls');
+  console.log('🚀 UniSphere initialized with proper single/multi poll voting');
   
-  // Initialize all components
   initTheme();
   initPostTypeToggle();
   initPollFunctions();
   loadBackground();
   
-  // Theme toggle
   const themeToggle = document.getElementById('themeToggle');
   if (themeToggle) {
     themeToggle.addEventListener('click', toggleTheme);
   }
   
-  // About section handlers
   const openAbout = document.getElementById("openAbout");
   const closeAbout = document.getElementById("closeAbout");
   const aboutSection = document.getElementById("aboutSection");
@@ -1052,7 +1197,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Create post functionality
   const createPostBackBtn = document.getElementById("createPostBackButton");
   const createPost = document.getElementById("createPost");
   const add = document.getElementById("add");
@@ -1065,7 +1209,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Image upload functionality
   const imageUploadBtn = document.getElementById('imageUploadButton');
   const imageInput = document.getElementById('imageInput');
   const imagePreview = document.getElementById('imagePreview');
@@ -1081,13 +1224,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const file = e.target.files[0];
       if (!file) return;
       
-      // Validate file type and size
       if (!file.type.startsWith('image/')) {
         showAlert('Please select an image file', 'warning');
         return;
       }
       
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         showAlert('Image size must be less than 5MB', 'warning');
         return;
       }
@@ -1127,7 +1269,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Submit post functionality
   const submitPostButton = document.getElementById('submitPostButton');
   if (submitPostButton) {
     submitPostButton.addEventListener('click', function() {
@@ -1139,7 +1280,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Close modal handlers
   document.addEventListener('click', function(e) {
     if (e.target.id === 'overlay') {
       toggleMenu();
@@ -1151,10 +1291,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Keyboard shortcuts
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-      // Close any open modals
       const aboutSection = document.getElementById('aboutSection');
       const createPost = document.getElementById('createPost');
       const menu = document.getElementById('mobile-menu');
@@ -1176,11 +1314,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Initial posts load
   fetchPosts();
-  
-  // Auto-refresh posts every 30 seconds
   setInterval(fetchPosts, 30000);
   
-  console.log('✅ UniSphere fully initialized with enhanced poll system');
+  console.log('✅ UniSphere fully initialized with proper single/multiple choice voting');
 });
