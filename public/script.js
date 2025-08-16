@@ -23,11 +23,14 @@ function updateThemeUI() {
   if (!themeToggle) return;
   
   const icon = themeToggle.querySelector('i');
-  const text = themeToggle.querySelector('.theme-text');
+  const textNode = themeToggle.childNodes[2]; // Get the text node after the icon
   
-  if (icon && text) {
-    icon.className = isDark ? 'fa-solid fa-sun text-xl' : 'fa-solid fa-moon text-xl';
-    text.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+  if (icon) {
+    icon.className = isDark ? 'fa-solid fa-sun w-6 text-xl' : 'fa-solid fa-moon w-6 text-xl';
+  }
+  
+  if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+    textNode.textContent = isDark ? ' Light Mode' : ' Dark Mode';
   }
 }
 
@@ -35,24 +38,44 @@ function updateThemeUI() {
 function toggleMenu() {
   const menu = document.getElementById("mobile-menu");
   const overlay = document.getElementById("overlay");
-  const hamburger = document.querySelector(".hamburger-menu") || document.querySelector(".menu");
+  const hamburger = document.querySelector(".hamburger-menu");
   
   if (!menu || !overlay) return;
   
-  const isOpen = menu.classList.contains("show");
+  const isOpen = menu.classList.contains("translate-x-0");
   
   if (isOpen) {
     // Close menu
-    menu.classList.remove("show");
-    overlay.classList.add("hidden");
-    hamburger?.classList.remove("active");
+    menu.classList.remove("translate-x-0");
+    menu.classList.add("translate-x-full");
+    overlay.classList.remove("opacity-100", "visible");
+    overlay.classList.add("opacity-0", "invisible");
+    hamburger?.classList.remove("hamburger-active");
+    hamburger?.setAttribute("aria-expanded", "false");
     document.body.style.overflow = "auto";
+    
+    // Reset menu items
+    const menuItems = document.querySelectorAll(".menu-item");
+    menuItems.forEach(item => {
+      item.classList.remove("opacity-100", "translate-x-0");
+      item.classList.add("opacity-0", "translate-x-8");
+    });
   } else {
     // Open menu
-    menu.classList.add("show");
-    overlay.classList.remove("hidden");
-    hamburger?.classList.add("active");
+    menu.classList.remove("translate-x-full");
+    menu.classList.add("translate-x-0");
+    overlay.classList.remove("opacity-0", "invisible");
+    overlay.classList.add("opacity-100", "visible");
+    hamburger?.classList.add("hamburger-active");
+    hamburger?.setAttribute("aria-expanded", "true");
     document.body.style.overflow = "hidden";
+    
+    // Animate menu items
+    const menuItems = document.querySelectorAll(".menu-item");
+    menuItems.forEach(item => {
+      item.classList.remove("opacity-0", "translate-x-8");
+      item.classList.add("opacity-100", "translate-x-0");
+    });
   }
 }
 
@@ -60,8 +83,6 @@ function toggleMenu() {
 function initPostTypeToggle() {
   const textToggle = document.getElementById('textPostToggle');
   const pollToggle = document.getElementById('pollPostToggle');
-  const textSection = document.getElementById('textPostSection');
-  const pollSection = document.getElementById('pollSection');
   
   if (!textToggle || !pollToggle) return;
   
@@ -81,13 +102,18 @@ function switchToTextPost() {
   const textSection = document.getElementById('textPostSection');
   const pollSection = document.getElementById('pollSection');
   
-  // Update button states
-  textToggle.className = 'px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold transition-all';
-  pollToggle.className = 'px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold transition-all';
+  // Update button states with proper Tailwind classes
+  textToggle.className = 'tab-button flex-1 px-6 py-3 rounded-lg font-semibold bg-blue-500 text-white shadow-md -translate-y-0.5';
+  pollToggle.className = 'tab-button flex-1 px-6 py-3 rounded-lg font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500';
   
   // Update sections
-  textSection?.classList.remove('hidden');
-  pollSection?.classList.add('hidden');
+  if (textSection && pollSection) {
+    textSection.classList.remove('opacity-0', 'translate-y-2', 'pointer-events-none', 'absolute', 'top-0', 'left-0', 'right-0');
+    textSection.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'relative');
+    
+    pollSection.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'relative');
+    pollSection.classList.add('opacity-0', 'translate-y-2', 'pointer-events-none', 'absolute', 'top-0', 'left-0', 'right-0');
+  }
   
   // Update ARIA attributes
   textToggle.setAttribute('aria-selected', 'true');
@@ -101,13 +127,18 @@ function switchToPollPost() {
   const textSection = document.getElementById('textPostSection');
   const pollSection = document.getElementById('pollSection');
   
-  // Update button states
-  pollToggle.className = 'px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold transition-all';
-  textToggle.className = 'px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold transition-all';
+  // Update button states with proper Tailwind classes
+  pollToggle.className = 'tab-button flex-1 px-6 py-3 rounded-lg font-semibold bg-blue-500 text-white shadow-md -translate-y-0.5';
+  textToggle.className = 'tab-button flex-1 px-6 py-3 rounded-lg font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500';
   
   // Update sections
-  pollSection?.classList.remove('hidden');
-  textSection?.classList.add('hidden');
+  if (textSection && pollSection) {
+    pollSection.classList.remove('opacity-0', 'translate-y-2', 'pointer-events-none', 'absolute', 'top-0', 'left-0', 'right-0');
+    pollSection.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'relative');
+    
+    textSection.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'relative');
+    textSection.classList.add('opacity-0', 'translate-y-2', 'pointer-events-none', 'absolute', 'top-0', 'left-0', 'right-0');
+  }
   
   // Update ARIA attributes
   pollToggle.setAttribute('aria-selected', 'true');
@@ -125,10 +156,10 @@ function initPollFunctions() {
     const optionCount = pollOptions.children.length;
     if (optionCount < 6) {
       const optionDiv = document.createElement('div');
-      optionDiv.className = 'poll-option-input flex items-center space-x-2';
+      optionDiv.className = 'poll-option-input flex items-center space-x-3';
       optionDiv.innerHTML = `
-        <input type="text" class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white focus:ring-2 focus:ring-blue-500 transition-colors" placeholder="Option ${optionCount + 1}" maxlength="100" />
-        <button class="text-red-500 hover:text-red-700 p-2 remove-option transition-colors">
+        <input type="text" class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-black dark:text-white focus:ring-2 focus:ring-blue-500 focus:-translate-y-0.5 focus:shadow-md transition-all duration-300" placeholder="Option ${optionCount + 1}" maxlength="100" />
+        <button class="text-red-500 hover:text-red-600 p-2 remove-option transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-110">
           <i class="fas fa-trash"></i>
         </button>
       `;
@@ -297,6 +328,9 @@ async function fetchPosts() {
     // Add event listeners after rendering
     addPostEventListeners();
     
+    // Add read more functionality for long captions
+    addReadMore('.caption-text');
+    
   } catch (error) {
     console.error('Error fetching posts:', error);
     showErrorState();
@@ -366,7 +400,7 @@ function createTextPostHTML(post) {
         <h1 class="font-poppins text-gray-900 dark:text-white font-bold">UniSphere</h1>
         <span class="text-gray-500 dark:text-gray-400 text-sm">• ${getDetailedTimeAgo(post.createdAt)}</span>
       </div>
-      ${post.content ? `<p class="text-gray-900 dark:text-white leading-relaxed mb-4">${escapeHtml(post.content)}</p>` : ''}
+      ${post.content ? `<p class="text-gray-900 dark:text-white leading-relaxed mb-4 caption-text">${escapeHtml(post.content)}</p>` : ''}
       ${post.imageUrl ? `
         <div class="relative overflow-hidden rounded-lg mb-4" style="padding-top: 56.25%">
           <img src="${post.imageUrl}" 
@@ -427,7 +461,7 @@ function createPollHTML(post) {
           <span class="text-gray-500 dark:text-gray-400 text-sm">${getDetailedTimeAgo(post.createdAt)}</span>
         </div>
       </div>
-      <h3 class="font-semibold text-lg text-gray-900 dark:text-white mb-4">${escapeHtml(post.question)}</h3>
+      <h3 class="font-semibold text-lg text-gray-900 dark:text-white mb-4 caption-text">${escapeHtml(post.question)}</h3>
       <div class="space-y-3 mb-4" id="poll-${post._id}">
         ${post.options.map(function(option, index) {
           const percentage = post.totalVotes > 0 ? Math.round((option.votes / post.totalVotes) * 100) : 0;
@@ -779,7 +813,7 @@ function escapeHtml(text) {
   return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
-// Background and Banner Loading
+// Background Loading
 async function loadBackground() {
   try {
     const bgResponse = await fetch(`/api/background?ts=${Date.now()}`);
@@ -798,11 +832,6 @@ async function loadBackground() {
   }
 }
 
-/**
- * Fetch banner data from /api/banner and toggle the UI.
- * Expected server payload: { imageUrl: string | null, linkUrl?: string }
- */
-
 // Tab Management
 function showTab(tabId) {
   document.querySelectorAll(".tab-section").forEach(function(section) {
@@ -818,6 +847,43 @@ function removeImage() {
   document.getElementById('imagePreview').innerHTML = '';
 }
 
+// Add Read More functionality for long captions
+function addReadMore(containerSelector, maxLines = 2) {
+  const elements = document.querySelectorAll(containerSelector);
+  elements.forEach(el => {
+    const lineHeight = parseFloat(getComputedStyle(el).lineHeight);
+    const maxHeight = lineHeight * maxLines;
+    
+    if (el.scrollHeight > maxHeight) {
+      el.style.maxHeight = maxHeight + 'px';
+      el.style.overflow = 'hidden';
+      el.style.position = 'relative';
+
+      const readMoreBtn = document.createElement('button');
+      readMoreBtn.textContent = 'Read More';
+      readMoreBtn.className = 'text-blue-600 dark:text-blue-400 font-semibold mt-1 hover:text-blue-700 dark:hover:text-blue-300 transition-colors';
+      readMoreBtn.style.background = 'none';
+      readMoreBtn.style.border = 'none';
+      readMoreBtn.style.cursor = 'pointer';
+      readMoreBtn.style.padding = '0';
+
+      readMoreBtn.onclick = () => {
+        if (readMoreBtn.textContent === 'Read More') {
+          el.style.maxHeight = 'none';
+          el.style.overflow = 'visible';
+          readMoreBtn.textContent = 'Read Less';
+        } else {
+          el.style.maxHeight = maxHeight + 'px';
+          el.style.overflow = 'hidden';
+          readMoreBtn.textContent = 'Read More';
+        }
+      };
+
+      el.after(readMoreBtn);
+    }
+  });
+}
+
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
   console.log('🚀 UniSphere initialized');
@@ -827,7 +893,6 @@ document.addEventListener('DOMContentLoaded', function() {
   initPostTypeToggle();
   initPollFunctions();
   loadBackground();
-  loadBanner();
   
   // Theme toggle
   const themeToggle = document.getElementById('themeToggle');
@@ -972,7 +1037,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = "auto";
       }
       
-      if (menu && menu.classList.contains('show')) {
+      if (menu && menu.classList.contains('translate-x-0')) {
         toggleMenu();
       }
     }
@@ -986,4 +1051,3 @@ document.addEventListener('DOMContentLoaded', function() {
   
   console.log('✅ UniSphere fully initialized with all features');
 });
-
