@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>UniSphere - Anonymous Social Platform</title>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-FB4PJCD0NM"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FB4PJCD0NM"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -311,30 +310,29 @@
     </div>
   </nav>
 </header>
-
-<!-- About Section -->
+<!-- About Section - Compact Version with Full Description -->
 <div id="aboutSection" 
-     class="fixed inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md flex flex-col items-center p-6 overflow-y-auto hidden z-50 transition-all duration-300" 
+     class="fixed inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md flex flex-col items-center p-4 overflow-y-auto hidden z-50 transition-all duration-300" 
      role="dialog" 
      aria-modal="true" 
      aria-labelledby="aboutTitle">
   
   <!-- Close Button -->
   <button id="closeAbout" 
-          class="absolute top-6 right-6 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+          class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-xl transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
     <i class="fas fa-times"></i>
   </button>
 
   <!-- Content -->
-  <div class="max-w-4xl mx-auto text-center mt-12">
+  <div class="max-w-2xl mx-auto text-center mt-8">
     <!-- Heading -->
-    <div class="flex items-center justify-center space-x-4 mb-8">
-      <i class="fa-solid fa-user-astronaut text-blue-500 text-4xl animate-bounce-in" aria-hidden="true"></i>
-      <h1 id="aboutTitle" class="text-4xl font-bold text-black dark:text-white">About UniSphere</h1>
+    <div class="flex items-center justify-center space-x-3 mb-6">
+      <i class="fa-solid fa-user-astronaut text-blue-500 text-3xl animate-bounce-in" aria-hidden="true"></i>
+      <h1 id="aboutTitle" class="text-2xl font-bold text-black dark:text-white">UniSphere</h1>
     </div>
 
-    <!-- Description -->
-    <div class="text-lg leading-relaxed text-gray-700 dark:text-gray-300 mb-8 space-y-4">
+    <!-- Full Description -->
+    <div class="text-base leading-relaxed text-gray-700 dark:text-gray-300 mb-6 space-y-4">
       <p class="text-blue-600 dark:text-blue-400 font-semibold text-xl">
         Speak Your Mind, Anonymously.
       </p>
@@ -347,42 +345,59 @@
       </p>
     </div>
 
-    <!-- Features -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="p-6 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-        <i class="fa-solid fa-shield-halved text-3xl text-green-500 mb-3" aria-hidden="true"></i>
-        <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Safe & Secure</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400">Your privacy is protected</p>
+    <!-- Features - Compact Grid -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 hover:shadow-md transition-all duration-300">
+        <i class="fa-solid fa-shield-halved text-2xl text-green-500 mb-2" aria-hidden="true"></i>
+        <h3 class="font-medium text-gray-900 dark:text-white text-sm">Safe & Secure</h3>
       </div>
-      <div class="p-6 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-        <i class="fa-solid fa-comments text-3xl text-purple-500 mb-3" aria-hidden="true"></i>
-        <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Open Discussion</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400">Share thoughts freely</p>
+      <div class="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 hover:shadow-md transition-all duration-300">
+        <i class="fa-solid fa-comments text-2xl text-purple-500 mb-2" aria-hidden="true"></i>
+        <h3 class="font-medium text-gray-900 dark:text-white text-sm">Open Discussion</h3>
       </div>
-      <div class="p-6 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-        <i class="fa-solid fa-users text-3xl text-orange-500 mb-3" aria-hidden="true"></i>
-        <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Community</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400">Connect with others</p>
+      <div class="p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 hover:shadow-md transition-all duration-300">
+        <i class="fa-solid fa-users text-2xl text-orange-500 mb-2" aria-hidden="true"></i>
+        <h3 class="font-medium text-gray-900 dark:text-white text-sm">Community</h3>
       </div>
     </div>
 
-    <!-- Developer Info -->
+    <!-- Contact Section -->
+    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-6">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Contact & Support</h3>
+      <div class="flex items-center justify-center space-x-4 text-sm">
+        <a href="mailto:skandaumesh82@gmail.com" 
+           class="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+          <i class="fas fa-envelope"></i>
+          <span>unisphere.support@gmail.com</span>
+        </a>
+      </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        Questions, feedback, or technical support
+      </p>
+    </div>
+
+    <!-- Developer Info - Compact -->
     <div class="text-center">
-      <p class="text-gray-700 dark:text-gray-300 text-sm mb-4">Developed with ❤️ by:</p>
+      <p class="text-gray-700 dark:text-gray-300 text-sm mb-3">Developed by</p>
       
-      <!-- Social Icons -->
-      <div class="flex items-center justify-center space-x-6">
+      <!-- Social Icons - Compact -->
+      <div class="flex items-center justify-center space-x-4">
         <a href="https://www.instagram.com/skanda.umesh/profilecard/?igsh=MmxqanQyaHRrN2I1" 
            target="_blank"
-           class="text-pink-500 text-3xl hover:text-pink-400 transition-all transform hover:scale-110 p-2 rounded-lg hover:bg-pink-50 dark:hover:bg-pink-900/20"
+           class="text-pink-500 text-2xl hover:text-pink-400 transition-all transform hover:scale-110 p-2 rounded-lg hover:bg-pink-50 dark:hover:bg-pink-900/20"
            aria-label="Follow on Instagram">
           <i class="fab fa-instagram"></i>
         </a>
         <a href="https://www.linkedin.com/in/skanda-umesh-88b16432b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" 
            target="_blank"
-           class="text-blue-500 text-3xl hover:text-blue-400 transition-all transform hover:scale-110 p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+           class="text-blue-500 text-2xl hover:text-blue-400 transition-all transform hover:scale-110 p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
            aria-label="Connect on LinkedIn">
           <i class="fab fa-linkedin"></i>
+        </a>
+        <a href="mailto:skandaumesh82@gmail.com" 
+           class="text-gray-600 dark:text-gray-300 text-2xl hover:text-blue-600 dark:hover:text-blue-400 transition-all transform hover:scale-110 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+           aria-label="Send Email">
+          <i class="fas fa-envelope"></i>
         </a>
       </div>
     </div>
@@ -800,6 +815,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
-
-
-
