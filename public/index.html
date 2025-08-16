@@ -39,6 +39,7 @@
             'hamburger-top': 'hamburgerTop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
             'hamburger-middle': 'hamburgerMiddle 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
             'hamburger-bottom': 'hamburgerBottom 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+            'float': 'float 3s ease-in-out infinite',
           },
           keyframes: {
             fadeIn: {
@@ -70,6 +71,10 @@
             hamburgerBottom: {
               '0%': { transform: 'rotate(0) translate(0, 0)' },
               '100%': { transform: 'rotate(-45deg) translate(6px, -6px)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-10px)' },
             },
           },
           transitionTimingFunction: {
@@ -481,15 +486,17 @@
 <!-- Main Content -->
 <main class="pt-20 pb-24 px-4" role="main">
 
-<!-- Banner with proper click handling -->
+<!-- Manual Banner with Fixed Tailwind Classes -->
 <div class="mb-10">
-  <a href="https://drive.google.com/file/d/15dVyunELgs5lpApJq9Op8ADCvJ9dvrja/view?usp=sharing" target="_blank" class="block">
-    <div class="h-50 overflow-hidden">
-      <img src="uni1.jpg" alt="Banner" class="w-full h-full object-cover rounded-xl shadow-xl mb--1" />
+  <a href="https://drive.google.com/file/d/15dVyunELgs5lpApJq9Op8ADCvJ9dvrja/view?usp=sharing" target="_blank" class="block group">
+    <div class="h-48 sm:h-56 md:h-64 lg:h-72 overflow-hidden rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 group-hover:-translate-y-1">
+      <img src="uni1.jpg" 
+           alt="UniSphere Banner - Welcome to our anonymous community" 
+           class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+           loading="lazy" />
     </div>
   </a>
 </div>
-
 
   <!-- Posts Container -->
   <div id="postsContainer" 
