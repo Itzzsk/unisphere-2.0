@@ -802,46 +802,6 @@ async function loadBackground() {
  * Fetch banner data from /api/banner and toggle the UI.
  * Expected server payload: { imageUrl: string | null, linkUrl?: string }
  */
-async function loadBanner() {
-  try {
-    const res = await fetch('/api/banner');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const { imageUrl, linkUrl } = await res.json();
-
-    const bannerImage       = document.getElementById('bannerImage');
-    const bannerPlaceholder = document.getElementById('bannerPlaceholder');
-    const bannerLinkWrapper = document.getElementById('bannerLinkWrapper');
-
-    if (imageUrl) {
-      // preload image for smooth fade-in
-      const img = new Image();
-      img.src = imageUrl;
-      img.onload = () => {
-        bannerImage.src = imageUrl;
-        bannerLinkWrapper.href = linkUrl || "#";
-
-        bannerImage.classList.remove("hidden");
-        requestAnimationFrame(() => {
-          bannerImage.classList.remove("opacity-0");
-        });
-
-        bannerPlaceholder.style.display = "none";
-      };
-    } else {
-      // no banner - show placeholder
-      bannerImage.classList.add("hidden");
-      bannerPlaceholder.style.display = "flex";
-      bannerLinkWrapper.href = "#";
-    }
-  } catch (err) {
-    console.error("Error loading banner:", err);
-    document.getElementById("bannerImage").classList.add("hidden");
-    document.getElementById("bannerPlaceholder").style.display = "flex";
-  }
-}
-
-document.addEventListener("DOMContentLoaded", loadBanner);
 
 // Tab Management
 function showTab(tabId) {
@@ -1026,3 +986,4 @@ document.addEventListener('DOMContentLoaded', function() {
   
   console.log('✅ UniSphere fully initialized with all features');
 });
+
