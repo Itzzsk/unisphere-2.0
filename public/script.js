@@ -1346,6 +1346,7 @@ class SimpleNotificationSystem {
     this.swRegistration = null;
     this.applicationServerKey = null;
     this.deviceInfo = this.detectDevice();
+    this.deploymentVersion = '1.0.0'; // Fixed version instead of Date.now()
     this.init();
   }
 
@@ -1371,16 +1372,8 @@ class SimpleNotificationSystem {
   async init() {
     console.log('📱 UniSphere Notification System initializing...');
 
-    // Check for deployment changes
-    const lastDeployment = localStorage.getItem('unisphere_deployment');
-    const currentDeployment = Date.now().toString();
-    
-    if (lastDeployment && lastDeployment !== currentDeployment) {
-      console.log('🔄 Deployment change detected - clearing cache');
-      await this.clearNotificationCache();
-    }
-    
-    localStorage.setItem('unisphere_deployment', currentDeployment);
+    // 🔧 FIXED: Check for deployment changes using server version
+    await this.checkDeploymentChange();
 
     // 🔧 CRITICAL: Always get fresh VAPID key from server
     try {
@@ -1408,7 +1401,7 @@ class SimpleNotificationSystem {
       return;
     }
 
-    // Check if user has visited before
+    // Check if user has visited before - FIXED localStorage key
     const hasVisited = localStorage.getItem('unisphere_visited');
     
     if (!hasVisited) {
@@ -1420,6 +1413,27 @@ class SimpleNotificationSystem {
     } else {
       // Returning user - check notification status
       await this.handleReturningUser();
+    }
+  }
+
+  // 🔧 FIXED: Deployment change detection using server version
+  async checkDeploymentChange() {
+    try {
+      // Get server deployment info
+      const response = await fetch('/api/deployment-status');
+      if (response.ok) {
+        const serverInfo = await response.json();
+        const lastKnownVersion = localStorage.getItem('unisphere_deployment_version');
+        
+        if (lastKnownVersion && lastKnownVersion !== serverInfo.timestamp) {
+          console.log('🔄 Deployment change detected - clearing cache');
+          await this.clearNotificationCache();
+        }
+        
+        localStorage.setItem('unisphere_deployment_version', serverInfo.timestamp);
+      }
+    } catch (error) {
+      console.log('⚠️ Could not check deployment status:', error);
     }
   }
 
@@ -1438,7 +1452,7 @@ class SimpleNotificationSystem {
         }
       }
       
-      // Clear notification-related localStorage
+      // Clear notification-related localStorage - FIXED key names
       localStorage.removeItem('unisphere_visited');
       
       console.log('🧹 Notification cache cleared for deployment');
@@ -1465,6 +1479,10 @@ class SimpleNotificationSystem {
       }
     } else if (Notification.permission === "default") {
       console.log('⏳ User can enable notifications');
+      // Show prompt after delay for returning users
+      setTimeout(() => {
+        this.showWelcomeModal();
+      }, 8000);
     } else {
       console.log('❌ Notifications denied by user');
     }
@@ -1644,7 +1662,7 @@ class SimpleNotificationSystem {
             isAndroid: this.deviceInfo.isAndroid
           },
           timestamp: new Date().toISOString(),
-          deployment: localStorage.getItem('unisphere_deployment')
+          deployment: localStorage.getItem('unisphere_deployment_version')
         })
       });
 
@@ -1733,19 +1751,20 @@ class SimpleNotificationSystem {
     return {
       isEnabled: this.isEnabled,
       permission: Notification.permission,
-      hasVisited: !!localStorage.getItem('unisphere_visited'),
+      hasVisited: !!localStorage.getItem('unisphere_visited'), // Fixed key
       swRegistered: !!this.swRegistration,
       deviceInfo: this.deviceInfo,
       vapidKeyLoaded: !!this.applicationServerKey,
-      deployment: localStorage.getItem('unisphere_deployment')
+      deployment: localStorage.getItem('unisphere_deployment_version')
     };
   }
 
-  // Force refresh for deployment issues
-  async forceRefresh() {
-    console.log('🔄 Force refreshing notification system...');
+  // 🔧 ADDED: Manual deployment reset
+  async resetForDeployment() {
+    console.log('🔄 Resetting for deployment...');
     await this.clearNotificationCache();
-    localStorage.removeItem('unisphere_deployment');
+    localStorage.removeItem('unisphere_deployment_version');
+    localStorage.removeItem('unisphere_visited');
     window.location.reload();
   }
 }
@@ -1763,13 +1782,13 @@ function checkNotificationStatus() {
   console.log('📊 Notification Status:', notifications.getStatus());
 }
 
-// Global force refresh for deployment issues
-function forceRefreshNotifications() {
-  notifications.forceRefresh();
+// 🔧 ADDED: Manual deployment reset function
+function resetNotificationsForDeployment() {
+  notifications.resetForDeployment();
 }
 
 // Console helper
-console.log('🚀 UniSphere Notification System Loaded - Production Ready');
+console.log('🚀 UniSphere Notification System Loaded - Deployment Ready');
 console.log('📱 Use testUniSphereNotification() to test');
 console.log('📊 Use checkNotificationStatus() to debug');
-console.log('🔄 Use forceRefreshNotifications() if deployment issues occur');
+console.log('🔄 Use resetNotificationsForDeployment() for deployment issues');
