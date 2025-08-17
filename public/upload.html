@@ -931,25 +931,6 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('📡 Features: Broadcast Notifications + Banner Upload + Firebase Auth');
 });
 
-// Add this button to your admin panel
-async function resetAllSubscriptions() {
-  if (confirm('⚠️ This will remove ALL current subscriptions. Users will need to re-subscribe. Continue?')) {
-    try {
-      const response = await fetch('/api/reset-all-subscriptions', { method: 'POST' });
-      const result = await response.json();
-      
-      if (result.success) {
-        alert(`✅ Reset complete: ${result.message}`);
-        // Refresh stats
-        await refreshStats();
-      } else {
-        alert('❌ Reset failed');
-      }
-    } catch (error) {
-      alert('❌ Reset failed: ' + error.message);
-    }
-  }
-}
 
 </script>
 
