@@ -857,6 +857,71 @@ app.post('/api/reset-all-subscriptions', async (req, res) => {
     res.status(500).json({ error: 'Failed to reset subscriptions' });
   }
 });
+// Add to your deployed server.js
+app.get('/api/force-reset-production', async (req, res) => {
+  try {
+    const result = await Subscription.deleteMany({});
+    console.log('🧹 PRODUCTION RESET: Cleared all subscriptions');
+    
+    res.json({
+      success: true,
+      message: `Production reset: ${result.deletedCount} subscriptions cleared`,
+      action: 'All users must re-subscribe with new deployment keys',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+// Add deployment verification endpoint
+app.get('/api/deployment-status', (req, res) => {
+  res.json({
+    status: 'deployed',
+    timestamp: new Date().toISOString(),
+    vapidKey: VAPID_KEYS.publicKey.substring(0, 20) + '...',
+    environment: process.env.NODE_ENV || 'production',
+    subscribers: null // Will be filled by next query
+  });
+});
+
+// Enhanced subscription stats for deployment
+app.get('/api/subscription-stats', async (req, res) => {
+  try {
+    const totalSubs = await Subscription.countDocuments({ isActive: true });
+    const deploymentStart = new Date();
+    deploymentStart.setHours(deploymentStart.getHours() - 1); // Last hour
+    
+    const newSubs = await Subscription.countDocuments({
+      isActive: true,
+      subscribedAt: { $gte: deploymentStart }
+    });
+
+    res.json({
+      total: totalSubs,
+      newSinceDeployment: newSubs,
+      deploymentTime: deploymentStart.toISOString(),
+      message: totalSubs === 0 ? 'All users need to re-subscribe after deployment' : 'Deployment successful'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get stats' });
+  }
+});
+// Add to your server.js RIGHT NOW
+app.get('/api/nuclear-reset', async (req, res) => {
+  try {
+    const result = await Subscription.deleteMany({});
+    console.log('💥 NUCLEAR RESET: All subscriptions deleted');
+    
+    res.json({
+      success: true,
+      message: `NUCLEAR RESET: ${result.deletedCount} subscriptions deleted`,
+      action: 'All users must re-subscribe immediately',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Static routes
 app.get('/upload.html', (req, res) => {
