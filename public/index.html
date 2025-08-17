@@ -12,6 +12,26 @@
 
   gtag('config', 'G-FB4PJCD0NM');
 </script>
+  <!-- Universal PWA Meta Tags -->
+  <meta name="application-name" content="UniSphere">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="UniSphere">
+  <meta name="msapplication-TileColor" content="#3B82F6">
+  <meta name="msapplication-tap-highlight" content="no">
+  
+  <!-- Theme colors for all platforms -->
+  <meta name="theme-color" content="#3B82F6">
+  <meta name="msapplication-navbutton-color" content="#3B82F6">
+  <meta name="apple-mobile-web-app-status-bar-style" content="#3B82F6">
+  
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- Universal Icons -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%233B82F6'/><text x='50' y='60' text-anchor='middle' font-size='40' fill='white'>🚀</text></svg>">
   <!-- SEO Meta Tags -->
   <meta name="description" content="UniSphere - A safe and anonymous platform for students to share thoughts, confessions, and experiences freely.">
   <meta name="keywords" content="anonymous, social, platform, students, confession, thoughts">
@@ -101,6 +121,47 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
+    /* Universal Mobile Optimizations */
+@media (max-width: 640px) {
+  /* Welcome modal mobile optimization */
+  #welcomePermissionModal .bg-white {
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 1rem;
+  }
+  
+  /* Notification toasts mobile positioning */
+  .fixed.top-4.right-4 {
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: calc(100vw - 2rem);
+  }
+  
+  /* Mobile-friendly buttons */
+  button {
+    min-height: 44px; /* iOS touch target size */
+  }
+}
+
+/* PWA display mode specific styles */
+@media (display-mode: standalone) {
+  /* When installed as PWA */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* iOS specific optimizations */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific styles */
+  .fixed {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
     /* Only keep CSS that Tailwind can't handle */
     html {
       scroll-behavior: smooth;
@@ -305,6 +366,7 @@
                          dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20">
             <i class="fa-solid fa-plus w-6 text-xl"></i> Create&nbsp;Post
           </button>
+          
         </li>
       </ul>
     </div>
