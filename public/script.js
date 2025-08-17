@@ -1337,75 +1337,374 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('✅ UniSphere fully initialized with proper single/multiple choice voting');
 });
 // Replace the notification system in your script section with this:
+// Universal Mobile Notification System
+// Complete Fixed Notification System
 class SimpleNotificationSystem {
   constructor() {
     this.isEnabled = false;
-    this.appName = "UniSphere"; // App name for notifications
+    this.appName = "UniSphere";
+    this.swRegistration = null;
+    this.applicationServerKey = null;
+    this.deviceInfo = this.detectDevice();
     this.init();
   }
 
-  async init() {
-    if ("Notification" in window && Notification.permission === "default") {
-      const permission = await Notification.requestPermission();
-      if (permission === "granted") {
-        this.isEnabled = true;
-        console.log("✅ UniSphere notifications enabled");
-      }
-    } else if (Notification.permission === "granted") {
-      this.isEnabled = true;
-      console.log("✅ UniSphere notifications already enabled");
-    }
+  detectDevice() {
+    const ua = navigator.userAgent;
+    return {
+      isAndroid: /Android/i.test(ua),
+      isIOS: /iPad|iPhone|iPod/.test(ua),
+      isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua),
+      browser: this.detectBrowser(ua),
+      userAgent: ua
+    };
   }
 
-  send(title, message, options = {}) {
-    if (!this.isEnabled || Notification.permission !== 'granted') {
-      console.log("❌ UniSphere notifications not enabled");
-      this.showAlert(`${this.appName}: ${title} - ${message}`);
+  detectBrowser(ua) {
+    if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) return 'Chrome';
+    if (/Firefox/i.test(ua)) return 'Firefox';
+    if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) return 'Safari';
+    if (/Edg/i.test(ua)) return 'Edge';
+    return 'Unknown';
+  }
+
+  async init() {
+    console.log('📱 UniSphere Notification System initializing...');
+
+    // 🔧 CRITICAL: Always get fresh VAPID key from server
+    try {
+      const response = await fetch('/api/vapid-public-key');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch VAPID key: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      this.applicationServerKey = data.publicKey;
+      
+      console.log('✅ VAPID public key loaded from server');
+      console.log('🔑 Key preview:', this.applicationServerKey.substring(0, 20) + '...');
+      
+    } catch (error) {
+      console.error('❌ Failed to load VAPID key:', error);
+      alert('Could not connect to notification server. Please refresh the page.');
       return;
     }
 
-    // Add app name to notification
-    const appTitle = `${this.appName} - ${title}`;
-
-    const notification = new Notification(appTitle, {
-      body: message,
-      icon: options.icon || '/favicon.ico',
-      badge: '/icon-192x192.png',
-      tag: options.tag || 'unisphere-notification',
-      vibrate: options.vibrate || [200, 100, 200],
-      requireInteraction: options.requireInteraction || false,
-      silent: options.silent || false
-    });
-
-    notification.onclick = () => {
-      window.focus();
-      notification.close();
-    };
-
-    setTimeout(() => notification.close(), options.duration || 5000);
-    console.log(`📱 UniSphere notification sent: ${appTitle} - ${message}`);
-    return notification;
+    // Check if user has visited before
+    const hasVisited = localStorage.getItem('unisphere_visited');
+    
+    if (!hasVisited) {
+      // First visit - show welcome modal
+      setTimeout(() => {
+        this.showWelcomeModal();
+      }, 3000);
+      localStorage.setItem('unisphere_visited', 'true');
+    } else {
+      // Returning user - check notification status
+      await this.handleReturningUser();
+    }
   }
 
-  showAlert(message) {
-    const alertContainer = document.getElementById('alertContainer');
-    if (!alertContainer) return;
+  async handleReturningUser() {
+    if (Notification.permission === "granted") {
+      console.log('🔍 Checking existing notification setup...');
+      
+      this.isEnabled = true;
+      await this.registerServiceWorker();
+      
+      // 🔧 CRITICAL: Check if subscription needs updating
+      const needsResubscription = await this.checkSubscriptionValidity();
+      
+      if (needsResubscription) {
+        console.log('🔄 VAPID key changed - re-subscribing...');
+        await this.resubscribeWithNewKey();
+      } else {
+        console.log('✅ Notifications working correctly');
+      }
+    } else if (Notification.permission === "default") {
+      console.log('⏳ User can enable notifications');
+    } else {
+      console.log('❌ Notifications denied by user');
+    }
+  }
 
-    const alert = document.createElement('div');
-    alert.className = 'bg-blue-500 text-white p-3 rounded-lg shadow-lg animate-slide-up';
-    alert.innerHTML = `
-      <div class="flex items-center">
-        <i class="fas fa-rocket mr-2"></i>
-        <span class="text-sm font-semibold">${message}</span>
-        <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+  async checkSubscriptionValidity() {
+    if (!this.swRegistration) return true;
+
+    try {
+      const subscription = await this.swRegistration.pushManager.getSubscription();
+      
+      if (!subscription) {
+        console.log('📋 No existing subscription found');
+        return true; // Need to subscribe
+      }
+
+      // Test if current subscription works with server
+      const testResponse = await fetch('/api/test-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: subscription.toJSON() })
+      });
+
+      if (testResponse.ok) {
+        console.log('✅ Existing subscription is valid');
+        return false; // No need to resubscribe
+      } else {
+        console.log('⚠️ Subscription is invalid, needs update');
+        return true; // Need to resubscribe
+      }
+      
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      return true; // Assume needs resubscription on error
+    }
+  }
+
+  async resubscribeWithNewKey() {
+    try {
+      // Unsubscribe old subscription
+      const oldSubscription = await this.swRegistration.pushManager.getSubscription();
+      if (oldSubscription) {
+        await oldSubscription.unsubscribe();
+        console.log('🗑️ Old subscription removed');
+      }
+
+      // Subscribe with new key
+      await this.subscribeUser();
+      
+      this.showSuccessMessage('🔄 Notifications updated! You\'re all set with the latest settings.');
+      
+    } catch (error) {
+      console.error('Error resubscribing:', error);
+      this.showWarningMessage('⚠️ Failed to update notifications. Please refresh the page.');
+    }
+  }
+
+  showWelcomeModal() {
+    const modal = document.createElement('div');
+    modal.id = 'welcomePermissionModal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] backdrop-blur-sm p-4';
+    
+    modal.innerHTML = `
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md mx-auto shadow-2xl border border-blue-200 dark:border-blue-800 animate-bounce-in">
+        <div class="text-center">
+          <div class="relative mb-4">
+            <i class="fa-solid fa-user-astronaut text-6xl text-blue-500"></i>
+          </div>
+          
+          <h2 class="text-2xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            🚀 Welcome to UniSphere!
+          </h2>
+          
+          <p class="text-gray-600 dark:text-gray-300 mb-6 text-sm">
+            Stay connected with our anonymous community! Get notified about important updates, new features, and community milestones.
+          </p>
+          
+          <div class="flex flex-col space-y-3">
+            <button onclick="notifications.requestPermission()" class="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-3 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition-all">
+              <i class="fas fa-bell mr-2"></i>
+              Enable Notifications
+            </button>
+            <button onclick="notifications.closeWelcomeModal()" class="w-full bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm hover:bg-gray-400 transition-colors">
+              Maybe Later
+            </button>
+          </div>
+          
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+            Device: ${this.deviceInfo.browser} | You can change this anytime
+          </p>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+  }
+
+  async requestPermission() {
+    try {
+      const permission = await Notification.requestPermission();
+      
+      if (permission === 'granted') {
+        this.isEnabled = true;
+        await this.registerServiceWorker();
+        await this.subscribeUser();
+        
+        this.showSuccessMessage(`🎉 Notifications enabled for ${this.deviceInfo.browser}! You'll receive important updates.`);
+      } else {
+        this.showWarningMessage('ℹ️ Notifications disabled. You can enable them anytime in browser settings.');
+      }
+      
+      this.closeWelcomeModal();
+    } catch (error) {
+      console.error('Error requesting permission:', error);
+      this.showWarningMessage('⚠️ Error enabling notifications. Please try again.');
+    }
+  }
+
+  async registerServiceWorker() {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      try {
+        this.swRegistration = await navigator.serviceWorker.register('/sw.js');
+        console.log('🔧 Service Worker registered');
+        return this.swRegistration;
+      } catch (error) {
+        console.error('Service Worker registration failed:', error);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  async subscribeUser() {
+    try {
+      if (!this.swRegistration) {
+        await this.registerServiceWorker();
+      }
+
+      if (!this.swRegistration) {
+        throw new Error('Service worker not available');
+      }
+
+      const subscription = await this.swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: this.urlBase64ToUint8Array(this.applicationServerKey)
+      });
+
+      await this.sendSubscriptionToServer(subscription);
+      console.log('📡 Successfully subscribed with current VAPID key');
+      
+    } catch (error) {
+      console.error('Failed to subscribe:', error);
+      throw error;
+    }
+  }
+
+  async sendSubscriptionToServer(subscription) {
+    try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscription: subscription.toJSON(),
+          userAgent: this.deviceInfo.userAgent,
+          deviceInfo: {
+            browser: this.deviceInfo.browser,
+            isMobile: this.deviceInfo.isMobile,
+            isIOS: this.deviceInfo.isIOS,
+            isAndroid: this.deviceInfo.isAndroid
+          },
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save subscription');
+      }
+
+      console.log('💾 Subscription saved to server');
+      
+    } catch (error) {
+      console.error('Error saving subscription:', error);
+      throw error;
+    }
+  }
+
+  showSuccessMessage(message) {
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-xl z-50 max-w-sm animate-slide-up';
+    toast.innerHTML = `
+      <div class="flex items-start space-x-3">
+        <i class="fas fa-check-circle text-xl"></i>
+        <div class="flex-1">
+          <div class="font-bold text-sm">UniSphere</div>
+          <div class="text-sm opacity-90">${message}</div>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">
           <i class="fas fa-times"></i>
         </button>
       </div>
     `;
 
-    alertContainer.appendChild(alert);
-    setTimeout(() => {
-      if (alert.parentElement) alert.remove();
-    }, 4000);
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+  }
+
+  showWarningMessage(message) {
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-orange-500 text-white p-4 rounded-lg shadow-xl z-50 max-w-sm animate-slide-up';
+    toast.innerHTML = `
+      <div class="flex items-start space-x-3">
+        <i class="fas fa-info-circle text-xl"></i>
+        <div class="flex-1">
+          <div class="font-bold text-sm">UniSphere</div>
+          <div class="text-sm opacity-90">${message}</div>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+  }
+
+  closeWelcomeModal() {
+    const modal = document.getElementById('welcomePermissionModal');
+    if (modal) modal.remove();
+  }
+
+  urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  // Test notification
+  testNotification() {
+    if (this.isEnabled && Notification.permission === 'granted') {
+      new Notification(`${this.appName} - Test`, {
+        body: `Mobile notification working on ${this.deviceInfo.browser}! 🚀`,
+        icon: '/favicon.ico'
+      });
+    } else {
+      alert('Please enable notifications first!');
+    }
+  }
+
+  // Get status for debugging
+  getStatus() {
+    return {
+      isEnabled: this.isEnabled,
+      permission: Notification.permission,
+      hasVisited: !!localStorage.getItem('unisphere_visited'),
+      swRegistered: !!this.swRegistration,
+      deviceInfo: this.deviceInfo,
+      vapidKeyLoaded: !!this.applicationServerKey
+    };
   }
 }
+
+// Initialize
+const notifications = new SimpleNotificationSystem();
+
+// Global test function
+function testUniSphereNotification() {
+  notifications.testNotification();
+}
+
+// Global status function for debugging
+function checkNotificationStatus() {
+  console.log('📊 Notification Status:', notifications.getStatus());
+}
+
+// Console helper
+console.log('🚀 UniSphere Notification System Loaded');
+console.log('📱 Use testUniSphereNotification() to test');
+console.log('📊 Use checkNotificationStatus() to debug');
+
