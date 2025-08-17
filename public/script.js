@@ -1371,9 +1371,27 @@ class SimpleNotificationSystem {
   async init() {
     console.log('📱 UniSphere Notification System initializing...');
 
+    // Check for deployment changes
+    const lastDeployment = localStorage.getItem('unisphere_deployment');
+    const currentDeployment = Date.now().toString();
+    
+    if (lastDeployment && lastDeployment !== currentDeployment) {
+      console.log('🔄 Deployment change detected - clearing cache');
+      await this.clearNotificationCache();
+    }
+    
+    localStorage.setItem('unisphere_deployment', currentDeployment);
+
     // 🔧 CRITICAL: Always get fresh VAPID key from server
     try {
-      const response = await fetch('/api/vapid-public-key');
+      const response = await fetch('/api/vapid-public-key', {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
       if (!response.ok) {
         throw new Error(`Failed to fetch VAPID key: ${response.status}`);
       }
@@ -1386,7 +1404,7 @@ class SimpleNotificationSystem {
       
     } catch (error) {
       console.error('❌ Failed to load VAPID key:', error);
-      alert('Could not connect to notification server. Please refresh the page.');
+      this.showWarningMessage('⚠️ Could not connect to notification server. Please refresh the page.');
       return;
     }
 
@@ -1402,6 +1420,30 @@ class SimpleNotificationSystem {
     } else {
       // Returning user - check notification status
       await this.handleReturningUser();
+    }
+  }
+
+  // Clear notification cache for deployments
+  async clearNotificationCache() {
+    try {
+      // Unregister old service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+          const subscription = await registration.pushManager.getSubscription();
+          if (subscription) {
+            await subscription.unsubscribe();
+          }
+          await registration.unregister();
+        }
+      }
+      
+      // Clear notification-related localStorage
+      localStorage.removeItem('unisphere_visited');
+      
+      console.log('🧹 Notification cache cleared for deployment');
+    } catch (error) {
+      console.error('Error clearing cache:', error);
     }
   }
 
@@ -1544,8 +1586,16 @@ class SimpleNotificationSystem {
   async registerServiceWorker() {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       try {
-        this.swRegistration = await navigator.serviceWorker.register('/sw.js');
-        console.log('🔧 Service Worker registered');
+        // Force update service worker for deployments
+        this.swRegistration = await navigator.serviceWorker.register('/sw.js', {
+          updateViaCache: 'none',
+          scope: '/'
+        });
+        
+        // Force immediate update
+        await this.swRegistration.update();
+        
+        console.log('🔧 Service Worker registered and updated');
         return this.swRegistration;
       } catch (error) {
         console.error('Service Worker registration failed:', error);
@@ -1593,7 +1643,8 @@ class SimpleNotificationSystem {
             isIOS: this.deviceInfo.isIOS,
             isAndroid: this.deviceInfo.isAndroid
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          deployment: localStorage.getItem('unisphere_deployment')
         })
       });
 
@@ -1685,8 +1736,17 @@ class SimpleNotificationSystem {
       hasVisited: !!localStorage.getItem('unisphere_visited'),
       swRegistered: !!this.swRegistration,
       deviceInfo: this.deviceInfo,
-      vapidKeyLoaded: !!this.applicationServerKey
+      vapidKeyLoaded: !!this.applicationServerKey,
+      deployment: localStorage.getItem('unisphere_deployment')
     };
+  }
+
+  // Force refresh for deployment issues
+  async forceRefresh() {
+    console.log('🔄 Force refreshing notification system...');
+    await this.clearNotificationCache();
+    localStorage.removeItem('unisphere_deployment');
+    window.location.reload();
   }
 }
 
@@ -1703,8 +1763,13 @@ function checkNotificationStatus() {
   console.log('📊 Notification Status:', notifications.getStatus());
 }
 
+// Global force refresh for deployment issues
+function forceRefreshNotifications() {
+  notifications.forceRefresh();
+}
+
 // Console helper
-console.log('🚀 UniSphere Notification System Loaded');
+console.log('🚀 UniSphere Notification System Loaded - Production Ready');
 console.log('📱 Use testUniSphereNotification() to test');
 console.log('📊 Use checkNotificationStatus() to debug');
-
+console.log('🔄 Use forceRefreshNotifications() if deployment issues occur');
