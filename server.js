@@ -31,9 +31,9 @@ function getClientIP(req) {
 // CORS Configuration
 app.use(cors({
   origin: [
-    'http://localhost:3000',
+  
     'http://localhost:5000',
-    'http://localhost:8080',
+   
     'https://res.cloudinary.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -195,6 +195,17 @@ app.get('/api/vapid-public-key', (req, res) => {
   });
 });
 
+// Deployment status endpoint
+app.get('/api/deployment-status', (req, res) => {
+  res.json({
+    status: 'deployed',
+    timestamp: new Date().toISOString(),
+    vapidKey: VAPID_KEYS.publicKey.substring(0, 20) + '...',
+    environment: process.env.NODE_ENV || 'production',
+    version: '1.0.0'
+  });
+});
+
 // 🚨 EMERGENCY RESET - Visit this URL to fix VAPID issues instantly
 app.get('/api/emergency-reset', async (req, res) => {
   try {
@@ -206,6 +217,40 @@ app.get('/api/emergency-reset', async (req, res) => {
       message: `Emergency reset complete: ${result.deletedCount} subscriptions cleared`,
       action: 'All users must re-subscribe with correct VAPID key',
       instructions: 'Clear browser data and visit main site to re-subscribe'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Nuclear reset endpoint
+app.get('/api/nuclear-reset', async (req, res) => {
+  try {
+    const result = await Subscription.deleteMany({});
+    console.log('💥 NUCLEAR RESET: All subscriptions deleted');
+    
+    res.json({
+      success: true,
+      message: `NUCLEAR RESET: ${result.deletedCount} subscriptions deleted`,
+      action: 'All users must re-subscribe immediately',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Production reset endpoint
+app.get('/api/force-reset-production', async (req, res) => {
+  try {
+    const result = await Subscription.deleteMany({});
+    console.log('🧹 PRODUCTION RESET: Cleared all subscriptions');
+    
+    res.json({
+      success: true,
+      message: `Production reset: ${result.deletedCount} subscriptions cleared`,
+      action: 'All users must re-subscribe with new deployment keys',
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -404,7 +449,7 @@ app.get('/api/posts', async (req, res) => {
         
         const optionsWithPercentages = post.options.map(option => {
           const percentage = totalVoteCount > 0 ? 
-            Math.round(((option.votes || 0) / totalVoteCount) * 100) : 0; // Fixed: Proper multiplication
+            Math.round(((option.votes || 0) / totalVoteCount) * 100) : 0;
           
           return {
             text: option.text,
@@ -429,7 +474,7 @@ app.get('/api/posts', async (req, res) => {
   }
 });
 
-// FIXED: Vote endpoint - REMOVED IP RESTRICTION, EVERYONE CAN VOTE
+// Vote endpoint - REMOVED IP RESTRICTION, EVERYONE CAN VOTE
 app.post('/api/posts/:postId/vote', async (req, res) => {
   try {
     const { postId } = req.params;
@@ -442,9 +487,6 @@ app.post('/api/posts/:postId/vote', async (req, res) => {
     if (!post || post.type !== 'poll') {
       return res.status(404).json({ message: 'Poll not found' });
     }
-
-    // REMOVED: IP restriction check - everyone can vote multiple times now
-    // No more checking if IP already voted
 
     // Initialize arrays
     post.options.forEach((option, index) => {
@@ -468,7 +510,7 @@ app.post('/api/posts/:postId/vote', async (req, res) => {
       // Add votes to multiple options
       optionIndexes.forEach(idx => {
         post.options[idx].votes += 1;
-        post.options[idx].voters.push(ip); // Track for analytics only
+        post.options[idx].voters.push(ip);
         console.log(`✅ Vote added to option ${idx}: "${post.options[idx].text}"`);
       });
 
@@ -481,7 +523,7 @@ app.post('/api/posts/:postId/vote', async (req, res) => {
       }
 
       post.options[selectedIndex].votes += 1;
-      post.options[selectedIndex].voters.push(ip); // Track for analytics only
+      post.options[selectedIndex].voters.push(ip);
       console.log(`✅ Vote added to option ${selectedIndex}: "${post.options[selectedIndex].text}"`);
     }
 
@@ -494,12 +536,12 @@ app.post('/api/posts/:postId/vote', async (req, res) => {
 
     console.log('✅ Vote saved successfully');
 
-    // Calculate percentages for response - FIXED multiplication
+    // Calculate percentages for response
     const optionsWithPercentages = post.options.map(option => ({
       text: option.text,
       votes: option.votes || 0,
       voters: option.voters || [],
-      percentage: totalVoteCount > 0 ? Math.round((option.votes / totalVoteCount) * 100) : 0 // Fixed: Proper multiplication
+      percentage: totalVoteCount > 0 ? Math.round((option.votes / totalVoteCount) * 100) : 0
     }));
 
     const responsePost = {
@@ -699,7 +741,7 @@ app.post('/api/send-to-all', async (req, res) => {
 
     let successCount = 0;
     let failureCount = 0;
-    const failureDetails = []; // Collect detailed error info
+    const failureDetails = [];
 
     // Send to all subscriptions with detailed error handling
     const promises = subscriptions.map(async (sub) => {
@@ -720,13 +762,11 @@ app.post('/api/send-to-all', async (req, res) => {
       } catch (error) {
         failureCount++;
         
-        // Enhanced: Log detailed error information
         console.error('❌ DETAILED ERROR for endpoint:', sub.endpoint.substring(0, 50) + '...');
         console.error('❌ Error Code:', error.statusCode);
         console.error('❌ Error Message:', error.message);
         console.error('❌ Error Body:', error.body);
         
-        // Store detailed error info
         failureDetails.push({
           endpoint: sub.endpoint.substring(0, 50) + '...',
           statusCode: error.statusCode,
@@ -759,7 +799,6 @@ app.post('/api/send-to-all', async (req, res) => {
 
     await Promise.all(promises);
 
-    // Enhanced: Log detailed results
     console.log('📤 DETAILED Notification broadcast completed:', {
       title,
       totalSubscriptions: subscriptions.length,
@@ -806,7 +845,10 @@ app.get('/api/subscription-stats', async (req, res) => {
     res.json({
       total: totalSubs,
       today: todaySubs,
-      recent: recentSubs
+      recent: recentSubs,
+      newSinceDeployment: todaySubs,
+      deploymentTime: todayStart.toISOString(),
+      message: totalSubs === 0 ? 'All users need to re-subscribe after deployment' : 'System operational'
     });
   } catch (error) {
     console.error('Error getting subscription stats:', error);
@@ -819,7 +861,6 @@ app.post('/api/send-notification', async (req, res) => {
   try {
     const { title, message, options } = req.body;
     
-    // Log the notification request
     console.log('📱 Manual notification request:', {
       title,
       message,
@@ -857,71 +898,6 @@ app.post('/api/reset-all-subscriptions', async (req, res) => {
     res.status(500).json({ error: 'Failed to reset subscriptions' });
   }
 });
-// Add to your deployed server.js
-app.get('/api/force-reset-production', async (req, res) => {
-  try {
-    const result = await Subscription.deleteMany({});
-    console.log('🧹 PRODUCTION RESET: Cleared all subscriptions');
-    
-    res.json({
-      success: true,
-      message: `Production reset: ${result.deletedCount} subscriptions cleared`,
-      action: 'All users must re-subscribe with new deployment keys',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-// Add deployment verification endpoint
-app.get('/api/deployment-status', (req, res) => {
-  res.json({
-    status: 'deployed',
-    timestamp: new Date().toISOString(),
-    vapidKey: VAPID_KEYS.publicKey.substring(0, 20) + '...',
-    environment: process.env.NODE_ENV || 'production',
-    subscribers: null // Will be filled by next query
-  });
-});
-
-// Enhanced subscription stats for deployment
-app.get('/api/subscription-stats', async (req, res) => {
-  try {
-    const totalSubs = await Subscription.countDocuments({ isActive: true });
-    const deploymentStart = new Date();
-    deploymentStart.setHours(deploymentStart.getHours() - 1); // Last hour
-    
-    const newSubs = await Subscription.countDocuments({
-      isActive: true,
-      subscribedAt: { $gte: deploymentStart }
-    });
-
-    res.json({
-      total: totalSubs,
-      newSinceDeployment: newSubs,
-      deploymentTime: deploymentStart.toISOString(),
-      message: totalSubs === 0 ? 'All users need to re-subscribe after deployment' : 'Deployment successful'
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get stats' });
-  }
-});
-// Add to your server.js RIGHT NOW
-app.get('/api/nuclear-reset', async (req, res) => {
-  try {
-    const result = await Subscription.deleteMany({});
-    console.log('💥 NUCLEAR RESET: All subscriptions deleted');
-    
-    res.json({
-      success: true,
-      message: `NUCLEAR RESET: ${result.deletedCount} subscriptions deleted`,
-      action: 'All users must re-subscribe immediately',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 // Static routes
 app.get('/upload.html', (req, res) => {
@@ -949,7 +925,7 @@ setInterval(async () => {
   try {
     const expiredCount = await Subscription.countDocuments({ 
       isActive: false, 
-      subscribedAt: { $lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // 7 days old
+      subscribedAt: { $lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
     });
     
     if (expiredCount > 0) {
@@ -973,4 +949,6 @@ app.listen(PORT, () => {
   console.log(`🔑 VAPID Public Key: ${VAPID_KEYS.publicKey.substring(0, 20)}...`);
   console.log(`🧹 Auto-cleanup: Expired subscriptions removed daily`);
   console.log(`🚨 Emergency Reset: Visit /api/emergency-reset to fix VAPID issues`);
+  console.log(`🔄 Nuclear Reset: Visit /api/nuclear-reset for complete cleanup`);
+  console.log(`📋 Deployment Status: Visit /api/deployment-status for info`);
 });
