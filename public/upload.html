@@ -114,9 +114,9 @@
         
         <!-- Status & Controls -->
         <div class="flex items-center space-x-4">
-          <div id="notificationStatus" class="flex items-center space-x-2">
+          <div id="connectionStatus" class="flex items-center space-x-2">
             <div class="w-3 h-3 bg-gray-400 rounded-full status-indicator"></div>
-            <span class="text-sm text-gray-600 dark:text-gray-400">Checking permissions...</span>
+            <span class="text-sm text-gray-600 dark:text-gray-400">Connecting...</span>
           </div>
           
           <!-- Theme Toggle -->
@@ -160,12 +160,12 @@
         <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-              <i class="fas fa-paper-plane mr-3 text-blue-500"></i>
-              Send Notification
+              <i class="fas fa-broadcast-tower mr-3 text-blue-500"></i>
+              Broadcast Notification
             </h2>
             <div class="text-sm text-gray-500 dark:text-gray-400">
               <i class="fas fa-users mr-1"></i>
-              <span id="activeUsers">All UniSphere Users</span>
+              <span id="subscriberCount">Loading...</span>
             </div>
           </div>
           
@@ -209,7 +209,7 @@
             <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
                 <i class="fas fa-cog mr-2 text-gray-500"></i>
-                Advanced Options
+                Broadcast Options
               </h3>
               
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -231,20 +231,6 @@
                   </div>
                 </label>
               </div>
-              
-              <!-- Duration -->
-              <div class="mt-4">
-                <label for="duration" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Auto-dismiss after (seconds)
-                </label>
-                <select id="duration" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white/80 dark:bg-slate-700/70 text-gray-900 dark:text-white">
-                  <option value="5000">5 seconds</option>
-                  <option value="10000">10 seconds</option>
-                  <option value="15000">15 seconds</option>
-                  <option value="30000">30 seconds</option>
-                  <option value="0">Never (manual dismiss only)</option>
-                </select>
-              </div>
             </div>
             
             <!-- Send Button -->
@@ -258,9 +244,9 @@
               
               <button type="submit" 
                       id="sendNotificationBtn"
-                      class="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
-                <i class="fas fa-rocket mr-2"></i>
-                <span class="send-text">Send Notification</span>
+                      class="px-8 py-3 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-broadcast-tower mr-2"></i>
+                <span class="send-text">Broadcast to All Users</span>
                 <i class="fas fa-spinner fa-spin ml-2 hidden loading-spinner"></i>
               </button>
             </div>
@@ -270,46 +256,55 @@
       
       <!-- Stats & History Panel -->
       <div class="space-y-6">
-        <!-- Quick Stats -->
+        <!-- Subscriber Stats -->
         <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <i class="fas fa-chart-bar mr-2 text-green-500"></i>
-            Quick Stats
+            <i class="fas fa-users mr-2 text-green-500"></i>
+            Subscriber Stats
           </h3>
           
-          <div class="space-y-4">
+          <div class="space-y-4" id="subscriberStats">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Total Subscribers</span>
+              <span id="totalSubscribers" class="text-lg font-bold text-green-600 dark:text-green-400">--</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600 dark:text-gray-400">New Today</span>
+              <span id="newToday" class="text-lg font-bold text-blue-600 dark:text-blue-400">--</span>
+            </div>
             <div class="flex justify-between items-center">
               <span class="text-sm text-gray-600 dark:text-gray-400">Sent Today</span>
-              <span id="sentToday" class="text-lg font-bold text-blue-600 dark:text-blue-400">0</span>
+              <span id="sentToday" class="text-lg font-bold text-purple-600 dark:text-purple-400">--</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Total Sent</span>
-              <span id="totalSent" class="text-lg font-bold text-green-600 dark:text-green-400">0</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-gray-600 dark:text-gray-400">Last Sent</span>
-              <span id="lastSent" class="text-sm text-gray-500 dark:text-gray-400">Never</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400">Last Broadcast</span>
+              <span id="lastBroadcast" class="text-sm text-gray-500 dark:text-gray-400">Never</span>
             </div>
           </div>
+          
+          <button onclick="refreshStats()" class="w-full mt-4 px-4 py-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors text-sm">
+            <i class="fas fa-refresh mr-2"></i>
+            Refresh Stats
+          </button>
         </div>
         
-        <!-- Recent Notifications -->
+        <!-- Recent Broadcasts -->
         <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
               <i class="fas fa-history mr-2 text-purple-500"></i>
-              Recent Notifications
+              Recent Broadcasts
             </h3>
             <button id="clearHistory" class="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
               Clear All
             </button>
           </div>
           
-          <div id="notificationHistory" class="space-y-3 max-h-96 overflow-y-auto">
+          <div id="broadcastHistory" class="space-y-3 max-h-96 overflow-y-auto">
             <!-- History items will be inserted here -->
             <div class="text-center text-gray-500 dark:text-gray-400 py-8">
-              <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
-              <p>No notifications sent yet</p>
+              <i class="fas fa-broadcast-tower text-4xl mb-3 opacity-50"></i>
+              <p>No broadcasts sent yet</p>
             </div>
           </div>
         </div>
@@ -355,13 +350,14 @@
 
 <!-- Success Modal -->
 <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
-  <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur rounded-xl p-6 max-w-sm mx-4 shadow-2xl border border-green-200 dark:border-green-800 notification-sent">
+  <div class="bg-white/70 dark:bg-slate-800/70 backdrop-blur rounded-xl p-6 max-w-md mx-4 shadow-2xl border border-green-200 dark:border-green-800 notification-sent">
     <div class="text-center">
       <div class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
         <i class="fas fa-check text-2xl text-green-600 dark:text-green-400"></i>
       </div>
-      <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Success!</h3>
-      <p id="successMessage" class="text-sm text-gray-600 dark:text-gray-400 mb-4">Operation completed successfully.</p>
+      <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Broadcast Sent! 📡</h3>
+      <p id="successMessage" class="text-sm text-gray-600 dark:text-gray-400 mb-4">Notification delivered successfully.</p>
+      <div id="deliveryStats" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-4 text-sm"></div>
       <button onclick="closeSuccessModal()" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors">
         Continue
       </button>
@@ -386,71 +382,110 @@ const $ = id => document.getElementById(id);
 // Current tab state
 let currentTab = 'notifications';
 
-// UniSphere Admin Notification System
-class UniSphereAdminNotifications {
+// UniSphere Web Push Admin System
+class UniSphereWebPushAdmin {
   constructor() {
     this.appName = "UniSphere";
-    this.isEnabled = false;
-    this.history = JSON.parse(localStorage.getItem('unisphere_notification_history') || '[]');
-    this.stats = JSON.parse(localStorage.getItem('unisphere_notification_stats') || '{"total": 0, "today": 0, "lastSent": null}');
+    this.history = JSON.parse(localStorage.getItem('unisphere_broadcast_history') || '[]');
+    this.stats = {
+      totalSubscribers: 0,
+      newToday: 0,
+      sentToday: 0,
+      lastBroadcast: null
+    };
     this.init();
   }
 
   async init() {
-    // Request notification permission
-    if ("Notification" in window) {
-      const permission = await Notification.requestPermission();
-      this.isEnabled = permission === "granted";
-      this.updateStatus();
-    }
-
     // Initialize UI
     this.setupEventListeners();
-    this.updateStats();
-    this.renderHistory();
     this.setupCharacterCounters();
-    this.checkDailyReset();
+    this.renderHistory();
+    
+    // Load initial stats
+    await this.loadSubscriberStats();
+    this.updateConnectionStatus('connected');
   }
 
-  updateStatus() {
-    const statusEl = document.getElementById('notificationStatus');
+  async loadSubscriberStats() {
+    try {
+      const response = await fetch('/api/subscription-stats');
+      if (response.ok) {
+        const stats = await response.json();
+        this.stats = {
+          totalSubscribers: stats.total || 0,
+          newToday: stats.today || 0,
+          sentToday: this.getBroadcastsToday(),
+          lastBroadcast: this.getLastBroadcastTime()
+        };
+        this.updateStatsDisplay();
+        this.updateConnectionStatus('connected');
+      } else {
+        throw new Error('Failed to load stats');
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error);
+      this.updateConnectionStatus('error');
+    }
+  }
+
+  updateStatsDisplay() {
+    $('totalSubscribers').textContent = this.stats.totalSubscribers;
+    $('newToday').textContent = this.stats.newToday;
+    $('sentToday').textContent = this.stats.sentToday;
+    $('subscriberCount').textContent = `${this.stats.totalSubscribers} Subscribers`;
+    
+    if (this.stats.lastBroadcast) {
+      $('lastBroadcast').textContent = this.timeAgo(new Date(this.stats.lastBroadcast));
+    }
+  }
+
+  updateConnectionStatus(status) {
+    const statusEl = $('connectionStatus');
     const statusDot = statusEl.querySelector('.status-indicator');
     const statusText = statusEl.querySelector('span');
 
-    if (this.isEnabled) {
-      statusDot.className = 'w-3 h-3 bg-green-500 rounded-full status-indicator';
-      statusText.textContent = 'Notifications Enabled';
-      statusText.className = 'text-sm text-green-600 dark:text-green-400';
-    } else {
-      statusDot.className = 'w-3 h-3 bg-red-500 rounded-full status-indicator';
-      statusText.textContent = 'Notifications Disabled';
-      statusText.className = 'text-sm text-red-600 dark:text-red-400';
+    switch(status) {
+      case 'connected':
+        statusDot.className = 'w-3 h-3 bg-green-500 rounded-full status-indicator';
+        statusText.textContent = 'Connected';
+        statusText.className = 'text-sm text-green-600 dark:text-green-400';
+        break;
+      case 'error':
+        statusDot.className = 'w-3 h-3 bg-red-500 rounded-full status-indicator';
+        statusText.textContent = 'Connection Error';
+        statusText.className = 'text-sm text-red-600 dark:text-red-400';
+        break;
+      default:
+        statusDot.className = 'w-3 h-3 bg-yellow-500 rounded-full status-indicator';
+        statusText.textContent = 'Connecting...';
+        statusText.className = 'text-sm text-yellow-600 dark:text-yellow-400';
     }
   }
 
   setupEventListeners() {
     // Form submission
-    document.getElementById('notificationForm').addEventListener('submit', (e) => {
+    $('notificationForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      this.sendNotification();
+      this.broadcastNotification();
     });
 
     // Preview button
-    document.getElementById('previewBtn').addEventListener('click', () => {
+    $('previewBtn').addEventListener('click', () => {
       this.previewNotification();
     });
 
     // Clear history
-    document.getElementById('clearHistory').addEventListener('click', () => {
+    $('clearHistory').addEventListener('click', () => {
       this.clearHistory();
     });
   }
 
   setupCharacterCounters() {
-    const titleInput = document.getElementById('notificationTitle');
-    const messageInput = document.getElementById('notificationMessage');
-    const titleCount = document.getElementById('titleCount');
-    const messageCount = document.getElementById('messageCount');
+    const titleInput = $('notificationTitle');
+    const messageInput = $('notificationMessage');
+    const titleCount = $('titleCount');
+    const messageCount = $('messageCount');
 
     titleInput.addEventListener('input', () => {
       titleCount.textContent = titleInput.value.length;
@@ -461,96 +496,103 @@ class UniSphereAdminNotifications {
     });
   }
 
-  checkDailyReset() {
-    const today = new Date().toDateString();
-    const lastDate = localStorage.getItem('unisphere_last_date');
-    
-    if (lastDate !== today) {
-      this.stats.today = 0;
-      localStorage.setItem('unisphere_last_date', today);
-      this.saveStats();
-    }
-  }
-
-  async sendNotification() {
-    if (!this.isEnabled) {
-      alert('Notifications are not enabled. Please allow notifications first.');
-      return;
-    }
-
-    const title = document.getElementById('notificationTitle').value.trim();
-    const message = document.getElementById('notificationMessage').value.trim();
+  async broadcastNotification() {
+    const title = $('notificationTitle').value.trim();
+    const message = $('notificationMessage').value.trim();
 
     if (!title || !message) {
       alert('Please fill in both title and message fields.');
       return;
     }
 
+    if (this.stats.totalSubscribers === 0) {
+      alert('No subscribers found. Users need to visit the main site and accept notifications first.');
+      return;
+    }
+
     // Show loading state
-    const sendBtn = document.getElementById('sendNotificationBtn');
+    const sendBtn = $('sendNotificationBtn');
     const sendText = sendBtn.querySelector('.send-text');
     const loadingSpinner = sendBtn.querySelector('.loading-spinner');
     
     sendBtn.disabled = true;
-    sendText.textContent = 'Sending...';
+    sendText.textContent = 'Broadcasting...';
     loadingSpinner.classList.remove('hidden');
 
     try {
-      // Create notification
-      const notification = new Notification(`${this.appName} - ${title}`, {
-        body: message,
-        icon: '/favicon.ico',
-        badge: '/icon-192x192.png',
-        tag: `unisphere-admin-${Date.now()}`,
-        requireInteraction: document.getElementById('requireInteraction').checked,
-        silent: document.getElementById('silentMode').checked,
-        vibrate: [200, 100, 200]
+      // Send to all subscribers via server
+      const response = await fetch('/api/send-to-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          message,
+          requireInteraction: $('requireInteraction').checked,
+          silent: $('silentMode').checked
+        })
       });
 
-      // Handle notification click
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
+      const result = await response.json();
 
-      // Auto-dismiss
-      const duration = parseInt(document.getElementById('duration').value);
-      if (duration > 0) {
-        setTimeout(() => notification.close(), duration);
+      if (response.ok) {
+        // Update stats
+        this.stats.sentToday++;
+        this.stats.lastBroadcast = new Date().toISOString();
+        this.updateStatsDisplay();
+
+        // Save to history
+        this.addToHistory(title, message, result.stats);
+
+        // Show success modal with delivery stats
+        this.showSuccessModal(result);
+
+        // Reset form
+        $('notificationForm').reset();
+        $('titleCount').textContent = '0';
+        $('messageCount').textContent = '0';
+
+      } else {
+        throw new Error(result.error || 'Failed to broadcast notification');
       }
 
-      // Save to history
-      this.addToHistory(title, message);
-      
-      // Update stats
-      this.stats.total++;
-      this.stats.today++;
-      this.stats.lastSent = new Date().toISOString();
-      this.saveStats();
-      this.updateStats();
-
-      // Show success modal
-      showSuccessModal('Notification sent successfully!');
-
-      // Reset form
-      document.getElementById('notificationForm').reset();
-      document.getElementById('titleCount').textContent = '0';
-      document.getElementById('messageCount').textContent = '0';
-
     } catch (error) {
-      console.error('Error sending notification:', error);
-      alert('Failed to send notification. Please try again.');
+      console.error('Error broadcasting notification:', error);
+      alert('Failed to broadcast notification: ' + error.message);
+      this.updateConnectionStatus('error');
     } finally {
       // Reset button state
       sendBtn.disabled = false;
-      sendText.textContent = 'Send Notification';
+      sendText.textContent = 'Broadcast to All Users';
       loadingSpinner.classList.add('hidden');
     }
   }
 
+  showSuccessModal(result) {
+    const stats = result.stats;
+    $('successMessage').textContent = `Successfully delivered to ${stats.sent} subscribers!`;
+    
+    const deliveryStats = `
+      <div class="grid grid-cols-2 gap-4 text-center">
+        <div>
+          <div class="text-lg font-bold text-green-600">${stats.sent}</div>
+          <div class="text-xs text-gray-600">Delivered</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold text-red-600">${stats.failed || 0}</div>
+          <div class="text-xs text-gray-600">Failed</div>
+        </div>
+      </div>
+    `;
+    
+    $('deliveryStats').innerHTML = deliveryStats;
+    $('successModal').classList.remove('hidden');
+  }
+
   previewNotification() {
-    const title = document.getElementById('notificationTitle').value.trim();
-    const message = document.getElementById('notificationMessage').value.trim();
+    const title = $('notificationTitle').value.trim();
+    const message = $('notificationMessage').value.trim();
 
     if (!title || !message) {
       alert('Please fill in both title and message to preview.');
@@ -572,7 +614,7 @@ class UniSphereAdminNotifications {
         </button>
       </div>
       <div class="mt-3 text-xs opacity-75 border-t border-blue-400 pt-2">
-        Preview - This is how your notification will appear
+        Preview - Will be sent to ${this.stats.totalSubscribers} subscribers
       </div>
     `;
 
@@ -585,18 +627,19 @@ class UniSphereAdminNotifications {
     }, 5000);
   }
 
-  addToHistory(title, message) {
+  addToHistory(title, message, stats = {}) {
     const historyItem = {
       id: Date.now(),
       title,
       message,
+      stats,
       timestamp: new Date().toISOString(),
       appName: this.appName
     };
 
     this.history.unshift(historyItem);
     
-    // Keep only last 50 notifications
+    // Keep only last 50 broadcasts
     if (this.history.length > 50) {
       this.history = this.history.slice(0, 50);
     }
@@ -606,13 +649,13 @@ class UniSphereAdminNotifications {
   }
 
   renderHistory() {
-    const historyContainer = document.getElementById('notificationHistory');
+    const historyContainer = $('broadcastHistory');
     
     if (this.history.length === 0) {
       historyContainer.innerHTML = `
         <div class="text-center text-gray-500 dark:text-gray-400 py-8">
-          <i class="fas fa-inbox text-4xl mb-3 opacity-50"></i>
-          <p>No notifications sent yet</p>
+          <i class="fas fa-broadcast-tower text-4xl mb-3 opacity-50"></i>
+          <p>No broadcasts sent yet</p>
         </div>
       `;
       return;
@@ -621,6 +664,7 @@ class UniSphereAdminNotifications {
     historyContainer.innerHTML = this.history.map(item => {
       const date = new Date(item.timestamp);
       const timeAgo = this.timeAgo(date);
+      const stats = item.stats || {};
       
       return `
         <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -628,23 +672,28 @@ class UniSphereAdminNotifications {
             <div class="flex-1">
               <div class="font-medium text-sm text-gray-900 dark:text-white">${item.appName} - ${item.title}</div>
               <div class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">${item.message}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-500 mt-2">${timeAgo}</div>
+              <div class="flex items-center space-x-3 mt-2 text-xs text-gray-500">
+                <span>${timeAgo}</span>
+                ${stats.sent ? `<span class="text-green-600">✓ ${stats.sent} sent</span>` : ''}
+                ${stats.failed ? `<span class="text-red-600">✗ ${stats.failed} failed</span>` : ''}
+              </div>
             </div>
-            <i class="fas fa-paper-plane text-blue-500 text-sm ml-2"></i>
+            <i class="fas fa-broadcast-tower text-red-500 text-sm ml-2"></i>
           </div>
         </div>
       `;
     }).join('');
   }
 
-  updateStats() {
-    document.getElementById('sentToday').textContent = this.stats.today;
-    document.getElementById('totalSent').textContent = this.stats.total;
-    
-    if (this.stats.lastSent) {
-      const lastSentDate = new Date(this.stats.lastSent);
-      document.getElementById('lastSent').textContent = this.timeAgo(lastSentDate);
-    }
+  getBroadcastsToday() {
+    const today = new Date().toDateString();
+    return this.history.filter(item => {
+      return new Date(item.timestamp).toDateString() === today;
+    }).length;
+  }
+
+  getLastBroadcastTime() {
+    return this.history.length > 0 ? this.history[0].timestamp : null;
   }
 
   timeAgo(date) {
@@ -657,7 +706,7 @@ class UniSphereAdminNotifications {
   }
 
   clearHistory() {
-    if (confirm('Are you sure you want to clear all notification history?')) {
+    if (confirm('Are you sure you want to clear all broadcast history?')) {
       this.history = [];
       this.saveHistory();
       this.renderHistory();
@@ -665,24 +714,29 @@ class UniSphereAdminNotifications {
   }
 
   saveHistory() {
-    localStorage.setItem('unisphere_notification_history', JSON.stringify(this.history));
-  }
-
-  saveStats() {
-    localStorage.setItem('unisphere_notification_stats', JSON.stringify(this.stats));
+    localStorage.setItem('unisphere_broadcast_history', JSON.stringify(this.history));
   }
 }
 
-// Initialize notification system
-let adminNotifications;
+// Initialize system
+let webPushAdmin;
+
+// Global functions
+async function refreshStats() {
+  if (webPushAdmin) {
+    $('subscriberStats').style.opacity = '0.5';
+    await webPushAdmin.loadSubscriberStats();
+    $('subscriberStats').style.opacity = '1';
+  }
+}
 
 // Auth State Management
 auth.onAuthStateChanged(user => {
   if (user) {
     showAdmin();
-    // Initialize notification system after login
-    if (!adminNotifications) {
-      adminNotifications = new UniSphereAdminNotifications();
+    // Initialize web push admin after login
+    if (!webPushAdmin) {
+      webPushAdmin = new UniSphereWebPushAdmin();
     }
   } else {
     showLogin();
@@ -814,7 +868,7 @@ $('uploadBannerForm').addEventListener('submit', async e => {
   
   let linkValue = $('bannerLink').value.trim();
   if (!linkValue.startsWith('http://') && !linkValue.startsWith('https://')) {
-    linkValue = 'https://' + linkValue; // auto add prefix
+    linkValue = 'https://' + linkValue;
   }
 
   if (!auth.currentUser) {
@@ -830,12 +884,6 @@ $('uploadBannerForm').addEventListener('submit', async e => {
     const fd = new FormData();
     fd.append('banner', $('bannerImage').files[0]);
     fd.append('link', linkValue);
-    
-    console.log('📤 Uploading banner:', {
-      hasFile: !!$('bannerImage').files,
-      fileName: $('bannerImage').files?.name,
-      linkValue
-    });
 
     const res = await fetch('/api/upload/banner', { 
       method: 'POST', 
@@ -863,6 +911,7 @@ $('uploadBannerForm').addEventListener('submit', async e => {
 // Global functions
 function showSuccessModal(message) {
   $('successMessage').textContent = message;
+  $('deliveryStats').innerHTML = '';
   $('successModal').classList.remove('hidden');
 }
 
@@ -878,9 +927,30 @@ function toggleBtn(disabled, btn, label) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 UniSphere Complete Admin Panel Loaded');
-  console.log('📋 Features: Notifications + Banner Upload + Firebase Auth');
+  console.log('🚀 UniSphere Web Push Admin Panel Loaded');
+  console.log('📡 Features: Broadcast Notifications + Banner Upload + Firebase Auth');
 });
+
+// Add this button to your admin panel
+async function resetAllSubscriptions() {
+  if (confirm('⚠️ This will remove ALL current subscriptions. Users will need to re-subscribe. Continue?')) {
+    try {
+      const response = await fetch('/api/reset-all-subscriptions', { method: 'POST' });
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`✅ Reset complete: ${result.message}`);
+        // Refresh stats
+        await refreshStats();
+      } else {
+        alert('❌ Reset failed');
+      }
+    } catch (error) {
+      alert('❌ Reset failed: ' + error.message);
+    }
+  }
+}
+
 </script>
 
 </body>
