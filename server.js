@@ -31,7 +31,7 @@ function getClientIP(req) {
 // CORS Configuration - FIX: Add your Netlify domain
 app.use(cors({
   origin: [
-    'https://unisphere-ah42.onrender.com',
+    'http://localhost:3000',
     'http://localhost:5000',
     'https://unisphere2.netlify.app',  // ← Your frontend
     'https://res.cloudinary.com'
