@@ -1,5 +1,4 @@
 {
-  "type": "module",
   "name": "unisphere-backend",
   "version": "1.0.0",
   "description": "UniSphere - Anonymous Social Platform Backend",
@@ -13,13 +12,7 @@
     "dev": "nodemon server.js",
     "build": "echo 'Backend is ready'"
   },
-  "keywords": [
-    "social",
-    "anonymous",
-    "platform",
-    "polls",
-    "posts"
-  ],
+  "keywords": ["social", "anonymous", "platform", "polls", "posts"],
   "author": "Skanda Umesh",
   "license": "ISC",
   "dependencies": {
