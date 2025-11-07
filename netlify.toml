@@ -1,0 +1,19 @@
+[build]
+  command = "npm run build"
+  publish = "public"
+
+# Redirect all 404s to index.html for SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Proxy API calls to backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://unisphere-backend.onrender.com/api/:splat"
+  status = 200
+
+[dev]
+  command = "npm start"
+  port = 3000
