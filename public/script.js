@@ -1,3 +1,8 @@
+// Set API base URL (MUST be at top)
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000' 
+  : 'https://unisphere-ah42.onrender.com';
+
 // Global Variables
 let currentPostType = 'text';
 let selectedImage = null;
@@ -237,7 +242,6 @@ function createPollPost() {
   
   submitPost(pollData);
 }
-
 async function submitPost(postData) {
   const submitButton = document.getElementById('submitPostButton');
   const originalText = submitButton.querySelector('.submit-text');
@@ -248,13 +252,15 @@ async function submitPost(postData) {
     originalText.classList.add('hidden');
     spinner.classList.remove('hidden');
     
-    const response = await fetch('/api/posts', {
+    // ✅ FIX: Use API_BASE instead of hardcoded /api/posts
+    const response = await fetch(`${API_BASE}/api/posts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(postData)
     });
     
     if (response.ok) {
+      // Clear form
       if (postData.type === 'text') {
         document.getElementById('postContent').value = '';
         selectedImage = null;
@@ -265,19 +271,21 @@ async function submitPost(postData) {
         document.getElementById('allowMultiple').checked = false;
       }
       
+      // Close modal
       document.getElementById("createPost").classList.add("hidden");
       document.getElementById("add").classList.add("hidden");
       document.body.style.overflow = "auto";
       
+      // Refresh posts
       fetchPosts();
-      showAlert('Your post has been shared anonymously!', 'success');
+      showAlert('Post shared!', 'success', 2000);
     } else {
       const error = await response.json();
-      showAlert(`Error creating post: ${error.message}`, 'error');
+      showAlert(`Error: ${error.message}`, 'error', 3000);
     }
   } catch (error) {
     console.error("Post submission error:", error);
-    showAlert("Failed to submit post. Please check your connection.", 'error');
+    showAlert("Check connection", 'error', 3000);
   } finally {
     submitButton.disabled = false;
     originalText.classList.remove('hidden');
@@ -285,10 +293,11 @@ async function submitPost(postData) {
   }
 }
 
-// Fetch and Display Posts
+// ✅ FIXED: Fetch Posts with correct API URL
 async function fetchPosts() {
   try {
-    const response = await fetch('/api/posts');
+    // ✅ FIX: Use API_BASE instead of hardcoded /api/posts
+    const response = await fetch(`${API_BASE}/api/posts`);
     if (!response.ok) throw new Error('Failed to fetch posts');
     
     const posts = await response.json();
@@ -296,27 +305,39 @@ async function fetchPosts() {
     if (!postsContainer) return;
     
     if (posts.length === 0) {
-      showEmptyState();
+      postsContainer.innerHTML = `
+        <div class="text-center py-12 animate-fade-in">
+          <i class="fas fa-comments text-6xl text-gray-400 dark:text-gray-600 mb-4"></i>
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No posts yet</h3>
+          <p class="text-gray-500 dark:text-gray-400">Be the first to share!</p>
+        </div>
+      `;
       return;
     }
     
-    postsContainer.innerHTML = posts.map(function(post) {
-      if (post.type === 'poll') {
-        return createPollHTML(post);
-      } else {
-        return createTextPostHTML(post);
-      }
+    // Generate HTML for all posts
+    postsContainer.innerHTML = posts.map(post => {
+      return post.type === 'poll' ? createPollHTML(post) : createTextPostHTML(post);
     }).join('');
     
+    // Attach event listeners
     addPostEventListeners();
     addReadMore('.caption-text');
     
   } catch (error) {
     console.error('Error fetching posts:', error);
-    showErrorState();
+    postsContainer.innerHTML = `
+      <div class="text-center py-12 animate-fade-in">
+        <i class="fas fa-exclamation-triangle text-6xl text-red-500 mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error loading posts</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">Check your connection</p>
+        <button onclick="fetchPosts()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
+          Try Again
+        </button>
+      </div>
+    `;
   }
 }
-
 function showEmptyState() {
   const postsContainer = document.getElementById('postsContainer');
   if (!postsContainer) return;
@@ -628,7 +649,7 @@ async function handlePollVote(event) {
       // SINGLE CHOICE: Vote immediately
       console.log('Single-choice - Voting for option:', optionIndex);
       
-      const response = await fetch(`/api/posts/${postId}/vote`, {
+      const response = await fetch(`${API_BASE}/api/posts/${postId}/vote`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -708,7 +729,7 @@ async function submitMultipleVote(postId) {
       return;
     }
     
-    const response = await fetch(`/api/posts/${postId}/vote`, {
+    const response = await fetch(`${API_BASE}/api/posts/${postId}/vote`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -876,7 +897,7 @@ async function handleLike(event) {
   const heartIcon = button.querySelector("svg");
   
   try {
-    const response = await fetch(`/api/posts/${postId}/like`, {
+    const response = await fetch(`${API_BASE}/api/posts/${postId}/like`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ liked: !liked })
@@ -938,7 +959,7 @@ async function submitComment(postId) {
   }
   
   try {
-    const response = await fetch(`/api/posts/${postId}/comments`, {
+    const response = await fetch(`${API_BASE}/api/posts/${postId}/comments`, {
       method: 'POST',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: comment })
@@ -984,7 +1005,7 @@ async function submitComment(postId) {
 
 async function fetchComments(postId) {
   try {
-    const response = await fetch(`/api/posts/${postId}/comments`);
+    const response = await fetch(`${API_BASE}/api/posts/${postId}/comments`);
     if (!response.ok) throw new Error('Failed to fetch comments');
     
     const comments = await response.json();
@@ -1044,39 +1065,43 @@ function getDetailedTimeAgo(dateString) {
 function openImageModal(imageUrl) {
   window.open(imageUrl, '_blank');
 }
-
-function showAlert(message, type = 'info') {
+// OPTIMIZED ALERT FUNCTION - BOTTOM CENTER
+function showAlert(message, type = 'info', duration = 2500) {
+  // Remove existing alerts
   const existingAlerts = document.querySelectorAll('.alert-message');
   existingAlerts.forEach(alert => alert.remove());
   
   const alert = document.createElement('div');
-  alert.className = `alert-message fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg max-w-md animate-slide-up ${
-    type === 'success' ? 'bg-green-500 text-white' :
-    type === 'error' ? 'bg-red-500 text-white' :
-    type === 'warning' ? 'bg-yellow-500 text-black' :
-    'bg-blue-500 text-white'
+  alert.className = `alert-message fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 px-5 py-3 rounded-lg shadow-xl text-white text-sm font-semibold animate-slide-up pointer-events-auto ${
+    type === 'success' ? 'bg-green-500 hover:bg-green-600' :
+    type === 'error' ? 'bg-red-500 hover:bg-red-600' :
+    type === 'warning' ? 'bg-yellow-500 hover:bg-yellow-600 text-gray-900' :
+    'bg-blue-500 hover:bg-blue-600'
   }`;
   
   const icons = {
-    success: 'fa-check-circle',
-    error: 'fa-times-circle',
-    warning: 'fa-exclamation-triangle',
-    info: 'fa-info-circle'
+    success: 'fa-check',
+    error: 'fa-xmark',
+    warning: 'fa-exclamation',
+    info: 'fa-info'
   };
   
   alert.innerHTML = `
-    <div class="flex items-center space-x-2">
-      <i class="fas ${icons[type] || icons.info}"></i>
-      <span class="font-medium">${message}</span>
+    <div class="flex items-center gap-2">
+      <i class="fas ${icons[type] || icons.info} text-base"></i>
+      <span>${message}</span>
     </div>
   `;
   
   document.body.appendChild(alert);
   
+  // Auto-fade out
   setTimeout(() => {
-    alert.remove();
-  }, 5000);
+    alert.style.animation = 'fadeOut 0.3s ease-out forwards';
+    setTimeout(() => alert.remove(), 300);
+  }, duration);
 }
+
 
 function escapeHtml(text) {
   const map = {
@@ -1091,7 +1116,7 @@ function escapeHtml(text) {
 
 async function loadBackground() {
   try {
-    const bgResponse = await fetch(`/api/background?ts=${Date.now()}`);
+    const bgResponse = await fetch(`${API_BASE}/api/background?ts=${Date.now()}`);
     if (!bgResponse.ok) throw new Error("Failed to fetch background image.");
     
     const bgData = await bgResponse.json();
@@ -1257,11 +1282,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         showAlert('Uploading image, please wait...', 'info');
         
-        const response = await fetch('/api/upload/post', {
-          method: 'POST',
-          body: formData
-        });
-        
+        const response = await fetch(`${API_BASE}/api/upload/post`, { method: 'POST', body: formData });
         const result = await response.json();
         if (response.ok) {
           selectedImage = result.imageUrl;
