@@ -99,7 +99,7 @@ unisphere/
 
 ## 5. Conclusion & Academic Details
 
-### 🎓 Learning Outcomes
+###  Learning Outcomes
 This project served as a comprehensive study in modern web development, specifically covering:
 * **REST API Development:** Creating endpoints for GET, POST, and DELETE operations.
 * **NoSQL Data Modeling:** Designing schemas for unstructured data (anonymous posts & polls).
@@ -108,7 +108,7 @@ This project served as a comprehensive study in modern web development, specific
 
 <br/>
 
-### 🏫 Academic Information
+###  Academic Information
 
 <div align="center">
 
