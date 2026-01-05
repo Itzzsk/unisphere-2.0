@@ -4,9 +4,9 @@
 ### Anonymous Campus Interaction Platform
 **Final Year Project – BCA**
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.0-blue?style=flat-square)
 ![Status](https://img.shields.io/badge/status-complete-success?style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)
+
 
 ---
 
