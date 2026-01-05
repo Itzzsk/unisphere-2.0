@@ -116,7 +116,7 @@ This project served as a comprehensive study in modern web development, specific
 | :--- | :--- |
 | **Project Type** | Final Year BCA Project |
 | **Developed By** | Skanda Umesh |
-| **Institution** | [Insert College Name] |
+| **Institution** | [MLA ACADEMY OF HIGHER LEARNING] |
 | **Academic Year** | 2025 - 2026 |
 
 </div>
