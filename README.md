@@ -14,6 +14,25 @@ The project demonstrates the application of **full-stack web development concept
 ---
 
 ## Problem Statement
+unisphere/
+├── models/
+│   └── moderation.js        # Backend moderation logic
+│
+├── public/
+│   ├── index.html           # Main feed (anonymous posts)
+│   ├── upload.html          # Anonymous post submission
+│   ├── style.css            # Application styling
+│   ├── script.js            # Frontend logic (posts, likes, comments)
+│   ├── manifest.json        # PWA configuration
+│   ├── sw.js                # Service Worker for offline support
+│   └── uni1.jpg             # Static asset
+│
+├── firebase-config.js       # Firebase configuration
+├── server.js                # Backend server entry point
+├── netlify.toml             # Deployment configuration
+├── package.json             # Project dependencies
+├── package-lock.json
+└── .gitignore
 
 In college environments, students often hesitate to share opinions, feedback, or ideas due to:
 - Fear of judgment
