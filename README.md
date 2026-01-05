@@ -1,175 +1,97 @@
-# Unisphere  
-**Anonymous Campus Interaction Platform**  
-_Final Year Project – BCA_
+<div align="center">
+
+# Unisphere
+### Anonymous Campus Interaction Platform
+**Final Year Project – BCA**
+
+![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
+![Status](https://img.shields.io/badge/status-complete-success?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)
 
 ---
 
-## Project Overview
+### Tech Stack
 
-**Unisphere** is a web-based anonymous campus interaction platform developed as a **final year BCA project**.  
-The application allows users to post **text and images anonymously**, enabling open expression and community interaction without revealing identity.
+![HTML5](https://img.shields.io/badge/Frontend-HTML5_%7C_CSS3_%7C_JS-E34F26?style=flat-square)
+![Node.js](https://img.shields.io/badge/Backend-Node.js_%7C_Express.js-339933?style=flat-square)
+![MongoDB](https://img.shields.io/badge/Database-MongoDB-4ea94b?style=flat-square)
+![Firebase](https://img.shields.io/badge/Storage-Firebase-FFCA28?style=flat-square)
+![Netlify](https://img.shields.io/badge/Deployment-Netlify-00C7B7?style=flat-square)
 
-The project demonstrates the application of **full-stack web development concepts**, **privacy-first design**, and **basic content moderation** in a real-world context.
+<br/>
+
+**Unisphere** is a privacy-first web platform that enables students to share thoughts, feedback, and ideas without revealing their identity.
+Designed to foster open expression while maintaining a safe, moderated community environment.
+
+</div>
 
 ---
 
-## Problem Statement
+## 1. Project Overview
+
+**Unisphere** addresses the social barriers in college environments—such as fear of judgment or identity bias—by eliminating user profiles entirely. It demonstrates the practical application of **full-stack web development**, **RESTful API design**, and **content moderation logic**.
+
+### Key Objectives
+* **Anonymity:** Design a posting system that requires no user authentication.
+* **Engagement:** Enable likes and comments on anonymous entries.
+* **Safety:** Implement admin-controlled moderation to filter inappropriate content.
+* **Accessibility:** Ensure a responsive, mobile-first design with PWA capabilities.
+
+---
+
+## 2. System Architecture
+
+The application follows a standard **MVC (Model-View-Controller)** architecture to ensure separation of concerns and scalability.
+
+| Component | Technology Used | Description |
+| :--- | :--- | :--- |
+| **Frontend** | HTML, CSS, JavaScript | Responsive UI with real-time DOM manipulation. |
+| **Backend** | Node.js, Express.js | REST API handling requests, routing, and logic. |
+| **Database** | MongoDB | NoSQL storage for posts, comments, and engagement data. |
+| **Storage** | Firebase / Cloudinary | Secure cloud storage for image uploads. |
+| **Hosting** | Netlify / Render | Cloud deployment for static assets and server services. |
+
+---
+
+## 3. Key Features
+
+### Core Functionality
+* **Anonymous Posting:** Users can submit text or image posts without login. No personal identifiers (IP, Email, Username) are stored.
+* **Community Interaction:** Real-time like and comment system allows engagement without identity disclosure.
+* **Dual-Feed System:**
+    * **For You:** Curated academic notices and highlights.
+    * **Explore:** The main stream of anonymous community posts.
+
+### Administration & Security
+* **Content Moderation:** A dedicated Admin Dashboard allows for the review and removal of flagged content before or after publication.
+* **Privacy-First Design:** The database schema is intentionally designed to exclude user-identifiable data fields.
+
+### Mobile Optimization
+* **Responsive Design:** Fully fluid layout adapting to desktop, tablet, and mobile screens.
+* **PWA Integration:** 'Add to Home Screen' functionality and offline support via Service Workers.
+* **Android Compatibility:** Optimized for conversion into an Android APK using WebView.
+
+---
+
+## 4. Project Structure
+
+```text
 unisphere/
 ├── models/
-│   └── moderation.js        # Backend moderation logic
+│   └── moderation.js        # Backend moderation logic & content safety
 │
-├── public/
-│   ├── index.html           # Main feed (anonymous posts)
-│   ├── upload.html          # Anonymous post submission
-│   ├── style.css            # Application styling
-│   ├── script.js            # Frontend logic (posts, likes, comments)
-│   ├── manifest.json        # PWA configuration
-│   ├── sw.js                # Service Worker for offline support
-│   └── uni1.jpg             # Static asset
+├── public/                  # Frontend Client
+│   ├── index.html           # Main feed UI (Anonymous posting stream)
+│   ├── upload.html          # Post submission interface
+│   ├── style.css            # Global application styling
+│   ├── script.js            # Frontend logic (DOM, API calls, interactions)
+│   ├── manifest.json        # PWA configuration (Installability)
+│   ├── sw.js                # Service Worker (Offline support & caching)
+│   └── uni1.jpg             # Static assets
 │
-├── firebase-config.js       # Firebase configuration
-├── server.js                # Backend server entry point
-├── netlify.toml             # Deployment configuration
-├── package.json             # Project dependencies
-├── package-lock.json
-└── .gitignore
-
-In college environments, students often hesitate to share opinions, feedback, or ideas due to:
-- Fear of judgment
-- Identity-based bias
-- Social pressure
-
-Most existing platforms require user authentication, which discourages honest participation.
-
-**Unisphere** addresses this issue by eliminating user identity while still enabling structured interaction and moderation.
-
----
-
-## Objectives
-
-- Design an anonymous posting system without user authentication  
-- Enable posting of text and image content  
-- Allow engagement through likes and comments  
-- Implement admin-controlled content moderation  
-- Develop a responsive and mobile-friendly web application  
-- Apply full-stack concepts learned during the BCA curriculum  
-
----
-
-## Key Features
-
-### 📝 Anonymous Posting
-- Users can submit text or image posts without login
-- No usernames or personal identifiers stored
-
-### ❤️ Community Interaction
-- Like and comment on posts
-- Engagement without identity disclosure
-
-### 🧭 Feed Structure
-- **For You:** Curated academic notices and highlights  
-- **Explore:** Anonymous community posts
-
-### 🛡️ Admin Moderation
-- Admin approval before post publication
-- Ability to remove inappropriate content
-- Controlled and safe environment
-
-### 📱 Mobile-Friendly & PWA Support
-- Responsive design for mobile devices
-- Progressive Web App features (installable & offline support)
-- Converted into Android APK using WebView
-
----
-
-## System Architecture
-
-- **Frontend:** HTML, CSS, JavaScript  
-- **Backend:** Node.js, Express.js  
-- **Database:** MongoDB  
-- **Media Storage:** Firebase / Cloudinary  
-- **Deployment:** Netlify (Frontend), Node.js Server  
-
----
-
-## Project Structure
-
-unisphere/
-├── models/
-│ └── moderation.js # Backend moderation logic
-│
-├── public/
-│ ├── index.html # Main feed (anonymous posts)
-│ ├── upload.html # Anonymous post submission
-│ ├── style.css # Application styling
-│ ├── script.js # Frontend logic (posts, likes, comments)
-│ ├── manifest.json # PWA configuration
-│ ├── sw.js # Service Worker for offline support
-│ └── uni1.jpg # Static asset
-│
-├── firebase-config.js # Firebase configuration
-├── server.js # Backend server entry point
-├── netlify.toml # Deployment configuration
-├── package.json # Project dependencies
-├── package-lock.json
-└── .gitignore
-
-
----
-
-## Data & Privacy Design
-
-- No user authentication or profiles  
-- No personal data collection  
-- Only post content, timestamps, likes, and comments are stored  
-- Designed with **privacy-first principles**
-
----
-
-## Learning Outcomes
-
-This project strengthened understanding of:
-- Full-stack web application development  
-- REST API design  
-- Database schema design  
-- Anonymous data handling  
-- Content moderation logic  
-- Deployment and hosting workflows  
-
----
-
-## Scope & Limitations
-
-### Scope
-- College-level usage  
-- Anonymous content sharing  
-- Admin-controlled moderation  
-
-### Limitations
-- No user personalization or history
-- Manual moderation required
-- Limited scalability for very large user bases
-
----
-
-## Future Enhancements
-
-- Automated moderation using AI/ML
-- Topic-based post categorization
-- Improved scalability and performance
-- Analytics dashboard for engagement insights
-
----
-
-## Academic Information
-
-- **Project Type:** Final Year BCA Project  
-- **Developed By:** Skanda Umesh  
-- **Institution:** _(Add your college name)_  
-- **Academic Year:** _(Add academic year)_  
-
----
-
-## Declaration
-
-This project was developed as part of the BCA curriculum and represents original work carried out for academic purposes.
+├── firebase-config.js       # Firebase SDK initialization & keys
+├── server.js                # Express/Node.js backend entry point
+├── netlify.toml             # Netlify build & deployment settings
+├── package.json             # Project dependencies & scripts
+├── package-lock.json        # Dependency version lock
+└── .gitignore               # Ignored build files
