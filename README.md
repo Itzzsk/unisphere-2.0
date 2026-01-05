@@ -33,7 +33,7 @@ Designed to foster open expression while maintaining a safe, moderated community
 
 ### Key Objectives
 * **Anonymity:** Design a posting system that requires no user authentication.
-* **Engagement:** Enable likes and comments on anonymous entries.
+* **Engagement:** Enable likes, comments, and voting on anonymous entries.
 * **Safety:** Implement admin-controlled moderation to filter inappropriate content.
 * **Accessibility:** Ensure a responsive, mobile-first design with PWA capabilities.
 
@@ -47,7 +47,7 @@ The application follows a standard **MVC (Model-View-Controller)** architecture 
 | :--- | :--- | :--- |
 | **Frontend** | HTML, CSS, JavaScript | Responsive UI with real-time DOM manipulation. |
 | **Backend** | Node.js, Express.js | REST API handling requests, routing, and logic. |
-| **Database** | MongoDB | NoSQL storage for posts, comments, and engagement data. |
+| **Database** | MongoDB | NoSQL storage for posts, polls, comments, and engagement data. |
 | **Storage** | Firebase / Cloudinary | Secure cloud storage for image uploads. |
 | **Hosting** | Netlify / Render | Cloud deployment for static assets and server services. |
 
@@ -57,6 +57,7 @@ The application follows a standard **MVC (Model-View-Controller)** architecture 
 
 ### Core Functionality
 * **Anonymous Posting:** Users can submit text or image posts without login. No personal identifiers (IP, Email, Username) are stored.
+* **Interactive Polls:** Users can create and vote on anonymous polls to gauge campus opinion on various topics.
 * **Community Interaction:** Real-time like and comment system allows engagement without identity disclosure.
 * **Dual-Feed System:**
     * **For You:** Curated academic notices and highlights.
@@ -78,10 +79,11 @@ The application follows a standard **MVC (Model-View-Controller)** architecture 
 ```text
 unisphere/
 ├── models/
-│   └── moderation.js        # Backend moderation logic & content safety
+│   ├── moderation.js        # Backend moderation logic & content safety
+│   └── polls.js             # Poll schema and voting logic
 │
 ├── public/                  # Frontend Client
-│   ├── index.html           # Main feed UI (Anonymous posting stream)
+│   ├── index.html           # Main feed UI (Anonymous posts & polls)
 │   ├── upload.html          # Post submission interface
 │   ├── style.css            # Global application styling
 │   ├── script.js            # Frontend logic (DOM, API calls, interactions)
