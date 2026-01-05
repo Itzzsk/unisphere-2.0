@@ -94,3 +94,34 @@ unisphere/
 ├── package.json             # Project dependencies & scripts
 ├── package-lock.json        # Dependency version lock
 └── .gitignore               # Ignored build files
+
+---
+
+## 5. Learning Outcomes
+
+This project served as a comprehensive study in modern web development, specifically covering:
+
+* **REST API Development:** Creating endpoints for GET, POST, and DELETE operations.
+* **NoSQL Data Modeling:** Designing schemas for unstructured data (anonymous posts & polls).
+* **Asynchronous JavaScript:** Managing API calls and frontend state updates.
+* **Deployment Pipelines:** Configuring production environments on Netlify and Node.js servers.
+
+---
+
+## 6. Academic Information
+
+<div align="center">
+
+| Field | Details |
+| :--- | :--- |
+| **Project Type** | Final Year BCA Project |
+| **Developed By** | Skanda Umesh |
+| **Institution** | [Insert College Name] |
+| **Academic Year** | 2025 - 2026 |
+
+</div>
+
+---
+
+### Declaration
+> This project was developed as part of the **BCA curriculum** and represents original work carried out for academic purposes.
