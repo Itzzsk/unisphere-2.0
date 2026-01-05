@@ -59,9 +59,6 @@ The application follows a standard **MVC (Model-View-Controller)** architecture 
 * **Anonymous Posting:** Users can submit text or image posts without login. No personal identifiers (IP, Email, Username) are stored.
 * **Interactive Polls:** Users can create and vote on anonymous polls to gauge campus opinion on various topics.
 * **Community Interaction:** Real-time like and comment system allows engagement without identity disclosure.
-* **Dual-Feed System:**
-    * **For You:** Curated academic notices and highlights.
-    * **Explore:** The main stream of anonymous community posts.
 
 ### Administration & Security
 * **Content Moderation:** A dedicated Admin Dashboard allows for the review and removal of flagged content before or after publication.
